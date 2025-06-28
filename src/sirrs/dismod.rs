@@ -6,7 +6,7 @@
 //!  - C → S
 //!  - C → Rc
 //!  - C → Ro
-//! 
+//!
 //! See [DisMod's latest documentation](https://dismod-at.readthedocs.io/latest/diff_eq.html#diff-eq-title).
 use nalgebra::DVector;
 
@@ -55,25 +55,18 @@ impl Model {
     /// This solution method is very rough and only suitable for demonstration.
     pub fn run_fdm_o1(&mut self) -> &Model {
         for t in 1..self.s.len() {
-            let dsdt = (-self.iota * self.s[t - 1])
-                + (self.rho * self.c[t - 1]);
-            let dcdt = (self.s[t - 1] * self.iota)
-                - (self.rho + self.chi + self.omega)
-                    * self.c[t - 1];
+            let dsdt = (-self.iota * self.s[t - 1]) + (self.rho * self.c[t - 1]);
+            let dcdt =
+                (self.s[t - 1] * self.iota) - (self.rho + self.chi + self.omega) * self.c[t - 1];
             let drcdt = self.chi * self.c[t - 1];
-            let drodt = (self.omega * self.c[t - 1])
-                + (self.omega * self.s[t - 1]);
+            let drodt = (self.omega * self.c[t - 1]) + (self.omega * self.s[t - 1]);
             self.s[t] = self.s[t - 1] + dsdt;
             self.c[t] = self.c[t - 1] + dcdt;
             self.rc[t] = self.rc[t - 1] + drcdt;
             self.ro[t] = self.ro[t - 1] + drodt;
             println!(
                 "t={}: s={:.6} c={:.6} rc={:.6} ro={:.6}",
-                t,
-                self.s[t],
-                self.c[t],
-                self.rc[t],
-                self.ro[t]
+                t, self.s[t], self.c[t], self.rc[t], self.ro[t]
             );
         }
         return self;
