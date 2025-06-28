@@ -14,7 +14,7 @@ use nalgebra::DVector;
 pub struct Model {
     /// Number of indices to generate and solve. The length of the series.
     pub length: usize,
-    /// Initial infectious population fraction.
+    /// Initial with-condition population fraction.
     pub c_init: f64,
     /// Transition rate from S into C. Must be in [0, 1].
     pub iota: f64,
