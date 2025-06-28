@@ -55,11 +55,11 @@ impl Model {
     /// This solution method is very rough and only suitable for demonstration.
     pub fn run_fdm_o1(&mut self) -> &Model {
         for t in 1..self.s.len() {
-            let dsdt = (-self.iota * self.s[t - 1]) + (self.rho * self.c[t - 1]);
+            let dsdt = -((self.iota + self.omega) * self.s[t - 1]) + (self.rho * self.c[t - 1]);
             let dcdt =
-                (self.iota * self.s[t - 1]) - (self.rho + self.chi + self.omega) * self.c[t - 1];
+                (self.iota * self.s[t - 1]) - ((self.rho + self.chi + self.omega) * self.c[t - 1]);
             let drcdt = self.chi * self.c[t - 1];
-            let drodt = self.omega * (self.c[t - 1] * self.s[t - 1]);
+            let drodt = self.omega * (self.s[t - 1] + self.c[t - 1]);
             self.s[t] = self.s[t - 1] + dsdt;
             self.c[t] = self.c[t - 1] + dcdt;
             self.rc[t] = self.rc[t - 1] + drcdt;

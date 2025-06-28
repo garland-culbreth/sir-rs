@@ -7,10 +7,10 @@ fn main() {
     let mut model: Model = Model {
         length: 365,
         c_init: 0.01,
-        iota: 0.01,
-        rho: 0.01,
+        iota: 0.001,
+        rho: 0.1,
         chi: 0.001,
-        omega: 0.001,
+        omega: 0.0001,
         s: DVector::default(),
         c: DVector::default(),
         rc: DVector::default(),
