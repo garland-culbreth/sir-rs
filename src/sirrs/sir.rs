@@ -4,8 +4,7 @@
 //!  - S → I  
 //!  - I → R  
 //!  - R → S  
-use ndarray::Array;
-use ndarray::prelude::*;
+use nalgebra::DVector;
 
 /// Create and run an SIR model.
 pub struct Model {
@@ -22,11 +21,11 @@ pub struct Model {
     /// Transition rate from I into S. Must be in [0, 1].
     pub recovery_rate: f64,
     /// Susceptible population fraction at each index. 1D Array with `length` number of elements.
-    pub s_popf: ArrayBase<ndarray::OwnedRepr<f64>, Dim<[usize; 1]>>,
+    pub s_popf: DVector<f64>,
     /// Inectious population fraction at each index. 1D Array with `length` number of elements.
-    pub i_popf: ArrayBase<ndarray::OwnedRepr<f64>, Dim<[usize; 1]>>,
+    pub i_popf: DVector<f64>,
     /// Removed population fraction at each index. 1D Array with `length` number of elements.
-    pub r_popf: ArrayBase<ndarray::OwnedRepr<f64>, Dim<[usize; 1]>>,
+    pub r_popf: DVector<f64>,
 }
 
 impl Model {
@@ -34,13 +33,13 @@ impl Model {
     /// to store the population fractions at each index and sets the 0th index
     /// of each equal to the corresponding initial population fraction.
     pub fn init_popf(&mut self) -> &mut Model {
-        self.s_popf = Array::<f64, _>::zeros((self.length).f());
-        self.i_popf = Array::<f64, _>::zeros((self.length).f());
-        self.r_popf = Array::<f64, _>::zeros((self.length).f());
+        self.s_popf = DVector::<f64>::zeros(self.length);
+        self.i_popf = DVector::<f64>::zeros(self.length);
+        self.r_popf = DVector::<f64>::zeros(self.length);
         let s_init = 1.0 - self.i_popf_init - self.r_popf_init; // Population fractions must sum to 1.
-        self.s_popf[[0]] = s_init;
-        self.i_popf[[0]] = self.i_popf_init;
-        self.r_popf[[0]] = self.r_popf_init;
+        self.s_popf[0] = s_init;
+        self.i_popf[0] = self.i_popf_init;
+        self.r_popf[0] = self.r_popf_init;
         return self;
     }
 
@@ -50,21 +49,21 @@ impl Model {
     /// This solution method is very rough and only suitable for demonstration.
     pub fn run_fdm_o1(&mut self) -> &Model {
         for t in 1..self.s_popf.len() {
-            let dsdt = (-self.incidence_rate * self.s_popf[[t - 1]] * self.i_popf[[t - 1]])
-                + (self.recovery_rate * self.i_popf[[t - 1]]);
-            let didt = (self.incidence_rate * self.s_popf[[t - 1]] * self.i_popf[[t - 1]])
-                - (self.removal_rate * self.i_popf[[t - 1]])
-                - (self.recovery_rate * self.i_popf[[t - 1]]);
-            let drdt = self.removal_rate * self.i_popf[[t - 1]];
-            self.s_popf[[t]] = self.s_popf[[t - 1]] + dsdt;
-            self.i_popf[[t]] = self.i_popf[[t - 1]] + didt;
-            self.r_popf[[t]] = self.r_popf[[t - 1]] + drdt;
+            let dsdt = (-self.incidence_rate * self.s_popf[t - 1] * self.i_popf[t - 1])
+                + (self.recovery_rate * self.i_popf[t - 1]);
+            let didt = (self.incidence_rate * self.s_popf[t - 1] * self.i_popf[t - 1])
+                - (self.removal_rate * self.i_popf[t - 1])
+                - (self.recovery_rate * self.i_popf[t - 1]);
+            let drdt = self.removal_rate * self.i_popf[t - 1];
+            self.s_popf[t] = self.s_popf[t - 1] + dsdt;
+            self.i_popf[t] = self.i_popf[t - 1] + didt;
+            self.r_popf[t] = self.r_popf[t - 1] + drdt;
             println!(
                 "t={}: s={:.6} i={:.6} r={:.6}",
                 t,
-                self.s_popf[[t]],
-                self.i_popf[[t]],
-                self.r_popf[[t]]
+                self.s_popf[t],
+                self.i_popf[t],
+                self.r_popf[t]
             );
         }
         return self;

@@ -1,7 +1,8 @@
 pub mod sirrs;
 
-use ndarray::Array;
+use nalgebra::DVector;
 use sirrs::sir::Model;
+// use sirrs::dismod::Model;
 
 fn main() {
     let mut model: Model = Model {
@@ -11,9 +12,9 @@ fn main() {
         incidence_rate: 0.04,
         removal_rate: 0.01,
         recovery_rate: 0.01,
-        s_popf: Array::default(1),
-        i_popf: Array::default(1),
-        r_popf: Array::default(1),
+        s_popf: DVector::default(),
+        i_popf: DVector::default(),
+        r_popf: DVector::default(),
     };
     model.init_popf();
     model.run_fdm_o1();
