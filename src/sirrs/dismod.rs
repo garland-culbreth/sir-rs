@@ -16,13 +16,13 @@ pub struct Model {
     pub length: usize,
     /// Initial infectious population fraction.
     pub c_init: f64,
-    /// Transition rate from S into I. Must be in [0, 1].
+    /// Transition rate from S into C. Must be in [0, 1].
     pub iota: f64,
-    /// Transition rate from I into S. Must be in [0, 1].
+    /// Transition rate from C into S. Must be in [0, 1].
     pub rho: f64,
-    /// Transition rate from I into Rc. Must be in [0, 1].
+    /// Transition rate from C into Rc. Must be in [0, 1].
     pub chi: f64,
-    /// Transition rate from S, I into Ro. Must be in [0, 1].
+    /// Transition rate from S, C into Ro. Must be in [0, 1].
     pub omega: f64,
     /// Susceptible population fraction at each index. 1D Array with `length` number of elements.
     pub s: DVector<f64>,
