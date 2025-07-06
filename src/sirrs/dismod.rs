@@ -109,7 +109,11 @@ mod tests {
         );
         assert_eq!(model.rho, 0.02, "Bad rho, expected 0.02 got {}", model.rho);
         assert_eq!(model.chi, 0.03, "Bad chi, expected 0.03 got {}", model.chi);
-        assert_eq!(model.omega, 0.04, "Bad omega, expected 0.04 got {}", model.omega);
+        assert_eq!(
+            model.omega, 0.04,
+            "Bad omega, expected 0.04 got {}",
+            model.omega
+        );
         assert_eq!(
             model.s,
             DVector::default(),
@@ -242,9 +246,10 @@ mod tests {
         model.init_popf();
         model.run_fdm_o1();
         for t in 1..model.length {
-            let dsdt = -((model.iota + model.omega) * model.s[t - 1]) + (model.rho * model.c[t - 1]);
-            let dcdt =
-                (model.iota * model.s[t - 1]) - ((model.rho + model.chi + model.omega) * model.c[t - 1]);
+            let dsdt =
+                -((model.iota + model.omega) * model.s[t - 1]) + (model.rho * model.c[t - 1]);
+            let dcdt = (model.iota * model.s[t - 1])
+                - ((model.rho + model.chi + model.omega) * model.c[t - 1]);
             let drcdt = model.chi * model.c[t - 1];
             let drodt = model.omega * (model.s[t - 1] + model.c[t - 1]);
             model.s[t] = model.s[t - 1] + dsdt;

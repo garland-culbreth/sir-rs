@@ -231,32 +231,44 @@ mod tests {
             assert!(
                 (model.s_popf[t] >= 0.0) & (model.s_popf[t] <= 1.0),
                 "s_popf[t] not in [0, 1] at time {}, got {}",
-                t, model.s_popf[t]
+                t,
+                model.s_popf[t]
             );
             assert!(
                 (model.i_popf[t] >= 0.0) & (model.i_popf[t] <= 1.0),
                 "i_popf[t] not in [0, 1] at time {}, got {}",
-                t, model.i_popf[t]
+                t,
+                model.i_popf[t]
             );
             assert!(
                 (model.r_popf[t] >= 0.0) & (model.r_popf[t] <= 1.0),
                 "r_popf[t] not in [0, 1] at time {}, got {}",
-                t, model.r_popf[t]
+                t,
+                model.r_popf[t]
             );
             assert_eq!(
-                model.s_popf[t], model.s_popf[t - 1] + dsdt,
+                model.s_popf[t],
+                model.s_popf[t - 1] + dsdt,
                 "Bad s_popf[t] at time {}, expected {} got {}",
-                t, model.s_popf[t - 1] + dsdt, model.s_popf[t]
+                t,
+                model.s_popf[t - 1] + dsdt,
+                model.s_popf[t]
             );
             assert_eq!(
-                model.i_popf[t], model.i_popf[t - 1] + didt,
+                model.i_popf[t],
+                model.i_popf[t - 1] + didt,
                 "Bad i_popf[t] at time {}, expected {} got {}",
-                t, model.i_popf[t - 1] + didt, model.i_popf[t]
+                t,
+                model.i_popf[t - 1] + didt,
+                model.i_popf[t]
             );
             assert_eq!(
-                model.r_popf[t], model.r_popf[t - 1] + drdt,
+                model.r_popf[t],
+                model.r_popf[t - 1] + drdt,
                 "Bad r_popf[t] at time {}, expected {} got {}",
-                t, model.r_popf[t - 1] + drdt, model.r_popf[t]
+                t,
+                model.r_popf[t - 1] + drdt,
+                model.r_popf[t]
             );
         }
     }
