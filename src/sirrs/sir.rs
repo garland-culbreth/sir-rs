@@ -4,7 +4,7 @@
 //!  - S → I  
 //!  - I → R  
 //!  - R → S  
-use nalgebra::DVector;
+use faer::Mat;
 
 /// Create and run an SIR model.
 pub struct Model {
@@ -21,11 +21,11 @@ pub struct Model {
     /// Transition rate from I into S. Must be in [0, 1].
     pub recovery_rate: f64,
     /// Susceptible population fraction at each index. 1D Array with `length` number of elements.
-    pub s_popf: DVector<f64>,
+    pub s_popf: Mat<f64>,
     /// Inectious population fraction at each index. 1D Array with `length` number of elements.
-    pub i_popf: DVector<f64>,
+    pub i_popf: Mat<f64>,
     /// Removed population fraction at each index. 1D Array with `length` number of elements.
-    pub r_popf: DVector<f64>,
+    pub r_popf: Mat<f64>,
 }
 
 impl Model {
@@ -33,13 +33,13 @@ impl Model {
     /// to store the population fractions at each index and sets the 0th index
     /// of each equal to the corresponding initial population fraction.
     pub fn init_popf(&mut self) -> &mut Model {
-        self.s_popf = DVector::<f64>::zeros(self.length);
-        self.i_popf = DVector::<f64>::zeros(self.length);
-        self.r_popf = DVector::<f64>::zeros(self.length);
+        self.s_popf = Mat::zeros(self.length, 1);
+        self.i_popf = Mat::zeros(self.length, 1);
+        self.r_popf = Mat::zeros(self.length, 1);
         let s_init = 1.0 - self.i_popf_init - self.r_popf_init; // Population fractions must sum to 1.
-        self.s_popf[0] = s_init;
-        self.i_popf[0] = self.i_popf_init;
-        self.r_popf[0] = self.r_popf_init;
+        self.s_popf[(0, 0)] = s_init;
+        self.i_popf[(0, 0)] = self.i_popf_init;
+        self.r_popf[(0, 0)] = self.r_popf_init;
         return self;
     }
 
@@ -48,19 +48,19 @@ impl Model {
     ///
     /// This solution method is very rough and only suitable for demonstration.
     pub fn run_fdm_o1(&mut self) -> &Model {
-        for t in 1..self.s_popf.len() {
-            let dsdt = (-self.incidence_rate * self.s_popf[t - 1] * self.i_popf[t - 1])
-                + (self.recovery_rate * self.i_popf[t - 1]);
-            let didt = (self.incidence_rate * self.s_popf[t - 1] * self.i_popf[t - 1])
-                - (self.removal_rate * self.i_popf[t - 1])
-                - (self.recovery_rate * self.i_popf[t - 1]);
-            let drdt = self.removal_rate * self.i_popf[t - 1];
-            self.s_popf[t] = self.s_popf[t - 1] + dsdt;
-            self.i_popf[t] = self.i_popf[t - 1] + didt;
-            self.r_popf[t] = self.r_popf[t - 1] + drdt;
+        for t in 1..self.length {
+            let dsdt = (-self.incidence_rate * self.s_popf[(t - 1, 0)] * self.i_popf[(t - 1, 0)])
+                + (self.recovery_rate * self.i_popf[(t - 1, 0)]);
+            let didt = (self.incidence_rate * self.s_popf[(t - 1, 0)] * self.i_popf[(t - 1, 0)])
+                - (self.removal_rate * self.i_popf[(t - 1, 0)])
+                - (self.recovery_rate * self.i_popf[(t - 1, 0)]);
+            let drdt = self.removal_rate * self.i_popf[(t - 1, 0)];
+            self.s_popf[(t, 0)] = self.s_popf[(t - 1, 0)] + dsdt;
+            self.i_popf[(t, 0)] = self.i_popf[(t - 1, 0)] + didt;
+            self.r_popf[(t, 0)] = self.r_popf[(t - 1, 0)] + drdt;
             println!(
                 "t={}: s={:.6} i={:.6} r={:.6}",
-                t, self.s_popf[t], self.i_popf[t], self.r_popf[t]
+                t, self.s_popf[(t, 0)], self.i_popf[(t, 0)], self.r_popf[(t, 0)]
             );
         }
         return self;
@@ -70,7 +70,7 @@ impl Model {
 #[cfg(test)]
 mod tests {
     use crate::sirrs::sir::Model;
-    use nalgebra::DVector;
+    use faer::Mat;
 
     #[test]
     fn test_init_model() {
@@ -81,9 +81,9 @@ mod tests {
             incidence_rate: 0.02,
             removal_rate: 0.03,
             recovery_rate: 0.04,
-            s_popf: DVector::default(),
-            i_popf: DVector::default(),
-            r_popf: DVector::default(),
+            s_popf: Mat::new(),
+            i_popf: Mat::new(),
+            r_popf: Mat::new(),
         };
         assert_eq!(
             model.length, 10,
@@ -117,20 +117,20 @@ mod tests {
         );
         assert_eq!(
             model.s_popf,
-            DVector::default(),
-            "Bad , expected DVector::default() got {}",
+            Mat::new(),
+            "Bad , expected DVector::default() got {:?}",
             model.s_popf,
         );
         assert_eq!(
             model.i_popf,
-            DVector::default(),
-            "Bad , expected DVector::default() got {}",
+            Mat::new(),
+            "Bad , expected DVector::default() got {:?}",
             model.i_popf,
         );
         assert_eq!(
             model.r_popf,
-            DVector::default(),
-            "Bad , expected DVector::default() got {}",
+            Mat::new(),
+            "Bad , expected DVector::default() got {:?}",
             model.r_popf,
         );
     }
@@ -144,9 +144,9 @@ mod tests {
             incidence_rate: 0.02,
             removal_rate: 0.03,
             recovery_rate: 0.04,
-            s_popf: DVector::default(),
-            i_popf: DVector::default(),
-            r_popf: DVector::default(),
+            s_popf: Mat::new(),
+            i_popf: Mat::new(),
+            r_popf: Mat::new(),
         };
         model.init_popf();
         assert_eq!(
@@ -164,44 +164,44 @@ mod tests {
             model.i_popf.shape(),
         );
         assert_eq!(
-            model.r_popf.shape(),
+            (model.r_popf.nrows(), model.r_popf.ncols()),
             (model.length, 1),
             "Bad r_popf dimensions, expected {:?} got {:?}.",
             (model.length, 1),
-            model.r_popf.shape(),
+            (model.r_popf.nrows(), model.r_popf.ncols()),
         );
         assert_eq!(
-            model.s_popf[0],
+            model.s_popf[(0, 0)],
             1.0 - model.i_popf_init - model.r_popf_init,
             "Bad s_popf[0] initialization value, expected {} got {}.",
             1.0 - model.i_popf_init - model.r_popf_init,
-            model.s_popf[0]
+            model.s_popf[(0, 0)]
         );
         assert_eq!(
-            model.i_popf[0], model.i_popf_init,
+            model.i_popf[(0, 0)], model.i_popf_init,
             "Bad i_popf[0] initialization value, expected {} got {}.",
-            model.i_popf_init, model.i_popf[0],
+            model.i_popf_init, model.i_popf[(0, 0)],
         );
         assert_eq!(
-            model.r_popf[0], model.r_popf_init,
+            model.r_popf[(0, 0)], model.r_popf_init,
             "Bad r_popf[0] initialization value, expected {} got {}.",
-            model.r_popf_init, model.r_popf[0],
+            model.r_popf_init, model.r_popf[(0, 0)],
         );
         for t in 1..model.length {
             assert_eq!(
-                model.s_popf[t], 0.0,
+                model.s_popf[(t, 0)], 0.0,
                 "Bad s_popf[t>0] initialization value, expected 0.0 got {}.",
-                model.s_popf[t]
+                model.s_popf[(t, 0)]
             );
             assert_eq!(
-                model.i_popf[t], 0.0,
+                model.i_popf[(t, 0)], 0.0,
                 "Bad i_popf[t>0] initialization value, expected 0.0 got {}.",
-                model.i_popf[t]
+                model.i_popf[(t, 0)]
             );
             assert_eq!(
-                model.r_popf[t], 0.0,
+                model.r_popf[(t, 0)], 0.0,
                 "Bad r_popf[t>0] initialization value, expected 0.0 got {}.",
-                model.r_popf[t]
+                model.r_popf[(t, 0)]
             );
         }
     }
@@ -215,60 +215,60 @@ mod tests {
             incidence_rate: 0.02,
             removal_rate: 0.03,
             recovery_rate: 0.04,
-            s_popf: DVector::default(),
-            i_popf: DVector::default(),
-            r_popf: DVector::default(),
+            s_popf: Mat::new(),
+            i_popf: Mat::new(),
+            r_popf: Mat::new(),
         };
         model.init_popf();
         model.run_fdm_o1();
         for t in 1..model.length {
-            let dsdt = (-model.incidence_rate * model.s_popf[t - 1] * model.i_popf[t - 1])
-                + (model.recovery_rate * model.i_popf[t - 1]);
-            let didt = (model.incidence_rate * model.s_popf[t - 1] * model.i_popf[t - 1])
-                - (model.removal_rate * model.i_popf[t - 1])
-                - (model.recovery_rate * model.i_popf[t - 1]);
-            let drdt = model.removal_rate * model.i_popf[t - 1];
+            let dsdt = (-model.incidence_rate * model.s_popf[(t - 1, 0)] * model.i_popf[(t - 1, 0)])
+                + (model.recovery_rate * model.i_popf[(t - 1, 0)]);
+            let didt = (model.incidence_rate * model.s_popf[(t - 1, 0)] * model.i_popf[(t - 1, 0)])
+                - (model.removal_rate * model.i_popf[(t - 1, 0)])
+                - (model.recovery_rate * model.i_popf[(t - 1, 0)]);
+            let drdt = model.removal_rate * model.i_popf[(t - 1, 0)];
             assert!(
-                (model.s_popf[t] >= 0.0) & (model.s_popf[t] <= 1.0),
-                "s_popf[t] not in [0, 1] at time {}, got {}",
+                (model.s_popf[(t, 0)] >= 0.0) & (model.s_popf[(t, 0)] <= 1.0),
+                "s_popf[(t, 0)] not in [0, 1] at time {}, got {}",
                 t,
-                model.s_popf[t]
-            );
-            assert!(
-                (model.i_popf[t] >= 0.0) & (model.i_popf[t] <= 1.0),
-                "i_popf[t] not in [0, 1] at time {}, got {}",
-                t,
-                model.i_popf[t]
+                model.s_popf[(t, 0)]
             );
             assert!(
-                (model.r_popf[t] >= 0.0) & (model.r_popf[t] <= 1.0),
-                "r_popf[t] not in [0, 1] at time {}, got {}",
+                (model.i_popf[(t, 0)] >= 0.0) & (model.i_popf[(t, 0)] <= 1.0),
+                "i_popf[(t, 0)] not in [0, 1] at time {}, got {}",
                 t,
-                model.r_popf[t]
+                model.i_popf[(t, 0)]
+            );
+            assert!(
+                (model.r_popf[(t, 0)] >= 0.0) & (model.r_popf[(t, 0)] <= 1.0),
+                "r_popf[(t, 0)] not in [0, 1] at time {}, got {}",
+                t,
+                model.r_popf[(t, 0)]
             );
             assert_eq!(
-                model.s_popf[t],
-                model.s_popf[t - 1] + dsdt,
-                "Bad s_popf[t] at time {}, expected {} got {}",
+                model.s_popf[(t, 0)],
+                model.s_popf[(t - 1, 0)] + dsdt,
+                "Bad s_popf[(t, 0)] at time {}, expected {} got {}",
                 t,
-                model.s_popf[t - 1] + dsdt,
-                model.s_popf[t]
+                model.s_popf[(t - 1, 0)] + dsdt,
+                model.s_popf[(t, 0)]
             );
             assert_eq!(
-                model.i_popf[t],
-                model.i_popf[t - 1] + didt,
-                "Bad i_popf[t] at time {}, expected {} got {}",
+                model.i_popf[(t, 0)],
+                model.i_popf[(t - 1, 0)] + didt,
+                "Bad i_popf[(t, 0)] at time {}, expected {} got {}",
                 t,
-                model.i_popf[t - 1] + didt,
-                model.i_popf[t]
+                model.i_popf[(t - 1, 0)] + didt,
+                model.i_popf[(t, 0)]
             );
             assert_eq!(
-                model.r_popf[t],
-                model.r_popf[t - 1] + drdt,
-                "Bad r_popf[t] at time {}, expected {} got {}",
+                model.r_popf[(t, 0)],
+                model.r_popf[(t - 1, 0)] + drdt,
+                "Bad r_popf[(t, 0)] at time {}, expected {} got {}",
                 t,
-                model.r_popf[t - 1] + drdt,
-                model.r_popf[t]
+                model.r_popf[(t - 1, 0)] + drdt,
+                model.r_popf[(t, 0)]
             );
         }
     }
