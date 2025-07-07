@@ -1,5 +1,5 @@
 use sirrs::dismod::Model;
-use nalgebra::DVector;
+use faer::Mat;
 
 #[test]
 fn dismod_init_popf() {
@@ -10,10 +10,10 @@ fn dismod_init_popf() {
         rho: 0.02,
         chi: 0.03,
         omega: 0.04,
-        s: DVector::default(),
-        c: DVector::default(),
-        ro: DVector::default(),
-        rc: DVector::default(),
+        s: Mat::new(),
+        c: Mat::new(),
+        ro: Mat::new(),
+        rc: Mat::new(),
     };
     model.init_popf();
     assert_eq!(
@@ -45,47 +45,47 @@ fn dismod_init_popf() {
         model.ro.shape(),
     );
     assert_eq!(
-        model.s[0],
+        model.s[(0, 0)],
         1.0 - model.c_init,
-        "Bad s[0] initialization value, expected {} got {}.",
+        "Bad s[(0, 0)] initialization value, expected {} got {}.",
         1.0 - model.c_init,
-        model.s[0],
+        model.s[(0, 0)],
     );
     assert_eq!(
-        model.c[0], model.c_init,
-        "Bad c[0] initialization value, expected {} got {}.",
-        model.c_init, model.c[0],
+        model.c[(0, 0)], model.c_init,
+        "Bad c[(0, 0)] initialization value, expected {} got {}.",
+        model.c_init, model.c[(0, 0)],
     );
     assert_eq!(
-        model.ro[0], 0.0,
-        "Bad ro[0] initialization value, expected {} got {}.",
-        0.0, model.c[0],
+        model.ro[(0, 0)], 0.0,
+        "Bad ro[(0, 0)] initialization value, expected {} got {}.",
+        0.0, model.c[(0, 0)],
     );
     assert_eq!(
-        model.rc[0], 0.0,
-        "Bad rc[0] initialization value, expected {} got {}.",
-        0.0, model.c[0],
+        model.rc[(0, 0)], 0.0,
+        "Bad rc[(0, 0)] initialization value, expected {} got {}.",
+        0.0, model.c[(0, 0)],
     );
     for t in 1..model.length {
         assert_eq!(
-            model.s[t], 0.0,
+            model.s[(t, 0)], 0.0,
             "Bad s[t>0] initialization value, expected 0.0 got {}.",
-            model.s[t]
+            model.s[(t, 0)]
         );
         assert_eq!(
-            model.c[t], 0.0,
+            model.c[(t, 0)], 0.0,
             "Bad c[t>0] initialization value, expected 0.0 got {}.",
-            model.c[t]
+            model.c[(t, 0)]
         );
         assert_eq!(
-            model.rc[t], 0.0,
+            model.rc[(t, 0)], 0.0,
             "Bad rc[t>0] initialization value, expected 0.0 got {}.",
-            model.rc[t]
+            model.rc[(t, 0)]
         );
         assert_eq!(
-            model.ro[t], 0.0,
+            model.ro[(t, 0)], 0.0,
             "Bad ro[t>0] initialization value, expected 0.0 got {}.",
-            model.ro[t]
+            model.ro[(t, 0)]
         );
     }
 }
@@ -99,79 +99,79 @@ fn dismod_run_fdm_o1() {
         rho: 0.02,
         chi: 0.03,
         omega: 0.04,
-        s: DVector::default(),
-        c: DVector::default(),
-        ro: DVector::default(),
-        rc: DVector::default(),
+        s: Mat::new(),
+        c: Mat::new(),
+        ro: Mat::new(),
+        rc: Mat::new(),
     };
     model.init_popf();
     model.run_fdm_o1();
     for t in 1..model.length {
         let dsdt =
-            -((model.iota + model.omega) * model.s[t - 1]) + (model.rho * model.c[t - 1]);
-        let dcdt = (model.iota * model.s[t - 1])
-            - ((model.rho + model.chi + model.omega) * model.c[t - 1]);
-        let drcdt = model.chi * model.c[t - 1];
-        let drodt = model.omega * (model.s[t - 1] + model.c[t - 1]);
-        model.s[t] = model.s[t - 1] + dsdt;
-        model.c[t] = model.c[t - 1] + dcdt;
-        model.rc[t] = model.rc[t - 1] + drcdt;
-        model.ro[t] = model.ro[t - 1] + drodt;
+            -((model.iota + model.omega) * model.s[(t - 1, 0)]) + (model.rho * model.c[(t - 1, 0)]);
+        let dcdt = (model.iota * model.s[(t - 1, 0)])
+            - ((model.rho + model.chi + model.omega) * model.c[(t - 1, 0)]);
+        let drcdt = model.chi * model.c[(t - 1, 0)];
+        let drodt = model.omega * (model.s[(t - 1, 0)] + model.c[(t - 1, 0)]);
+        model.s[(t, 0)] = model.s[(t - 1, 0)] + dsdt;
+        model.c[(t, 0)] = model.c[(t - 1, 0)] + dcdt;
+        model.rc[(t, 0)] = model.rc[(t - 1, 0)] + drcdt;
+        model.ro[(t, 0)] = model.ro[(t - 1, 0)] + drodt;
         assert!(
-            (model.s[t] >= 0.0) & (model.s[t] <= 1.0),
-            "s[t] not in [0, 1] at time {}, got {}",
+            (model.s[(t, 0)] >= 0.0) & (model.s[(t, 0)] <= 1.0),
+            "s[(t, 0)] not in [0, 1] at time {}, got {}",
             t,
-            model.s[t]
-        );
-        assert!(
-            (model.c[t] >= 0.0) & (model.c[t] <= 1.0),
-            "c[t] not in [0, 1] at time {}, got {}",
-            t,
-            model.c[t]
+            model.s[(t, 0)]
         );
         assert!(
-            (model.rc[t] >= 0.0) & (model.rc[t] <= 1.0),
-            "rc[t] not in [0, 1] at time {}, got {}",
+            (model.c[(t, 0)] >= 0.0) & (model.c[(t, 0)] <= 1.0),
+            "c[(t, 0)] not in [0, 1] at time {}, got {}",
             t,
-            model.rc[t]
+            model.c[(t, 0)]
         );
         assert!(
-            (model.ro[t] >= 0.0) & (model.ro[t] <= 1.0),
-            "ro[t] not in [0, 1] at time {}, got {}",
+            (model.rc[(t, 0)] >= 0.0) & (model.rc[(t, 0)] <= 1.0),
+            "rc[(t, 0)] not in [0, 1] at time {}, got {}",
             t,
-            model.ro[t]
+            model.rc[(t, 0)]
+        );
+        assert!(
+            (model.ro[(t, 0)] >= 0.0) & (model.ro[(t, 0)] <= 1.0),
+            "ro[(t, 0)] not in [0, 1] at time {}, got {}",
+            t,
+            model.ro[(t, 0)]
         );
         assert_eq!(
-            model.s[t],
-            model.s[t - 1] + dsdt,
-            "Bad s[t] at time {}, expected {} got {}",
+            model.s[(t, 0)],
+            model.s[(t - 1, 0)] + dsdt,
+            "Bad s[(t, 0)] at time {}, expected {} got {}",
             t,
-            model.s[t - 1] + dsdt,
-            model.s[t]
+            model.s[(t - 1, 0)] + dsdt,
+            model.s[(t, 0)]
         );
         assert_eq!(
-            model.c[t],
-            model.c[t - 1] + dcdt,
-            "Bad c[t] at time {}, expected {} got {}",
+            model.c[(t, 0)],
+            model.c[(t - 1, 0)] + dcdt,
+            "Bad c[(t, 0)] at time {}, expected {} got {}",
             t,
-            model.c[t - 1] + dcdt,
-            model.c[t]
+            model.c[(t - 1, 0)] + dcdt,
+            model.c[(t, 0)]
         );
         assert_eq!(
-            model.rc[t],
-            model.rc[t - 1] + drcdt,
-            "Bad rc[t] at time {}, expected {} got {}",
+            model.rc[(t, 0)],
+            model.rc[(t - 1, 0)] + drcdt,
+            "Bad rc[(t, 0)] at time {}, expected {} got {}",
             t,
-            model.rc[t - 1] + drcdt,
-            model.rc[t]
+            model.rc[(t - 1, 0)] + drcdt,
+            model.rc[(t, 0)]
         );
         assert_eq!(
-            model.ro[t],
-            model.ro[t - 1] + drodt,
-            "Bad ro[t] at time {}, expected {} got {}",
+            model.ro[(t, 0)],
+            model.ro[(t - 1, 0)] + drodt,
+            "Bad ro[(t, 0)] at time {}, expected {} got {}",
             t,
-            model.ro[t - 1] + drodt,
-            model.ro[t]
+            model.ro[(t - 1, 0)] + drodt,
+            model.ro[(t, 0)]
         );
     }
 }
