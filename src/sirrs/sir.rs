@@ -164,11 +164,11 @@ mod tests {
             model.i_popf.shape(),
         );
         assert_eq!(
-            (model.r_popf.nrows(), model.r_popf.ncols()),
+            model.r_popf.shape(),
             (model.length, 1),
             "Bad r_popf dimensions, expected {:?} got {:?}.",
             (model.length, 1),
-            (model.r_popf.nrows(), model.r_popf.ncols()),
+            model.r_popf.shape(),
         );
         assert_eq!(
             model.s_popf[(0, 0)],
