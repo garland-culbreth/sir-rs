@@ -43,11 +43,10 @@ impl Model {
         return self;
     }
 
-    /// Run the SIR differential equations by the first-order finite difference
-    /// method.
+    /// Run the SIR differential equations by the first-order euler method.
     ///
     /// This solution method is very rough and only suitable for demonstration.
-    pub fn run_fdm_o1(&mut self) -> &Model {
+    pub fn run_euler(&mut self) -> &Model {
         for t in 1..self.length {
             let dsdt = (-self.incidence_rate * self.s_popf[(t - 1, 0)] * self.i_popf[(t - 1, 0)])
                 + (self.recovery_rate * self.i_popf[(t - 1, 0)]);
@@ -60,7 +59,10 @@ impl Model {
             self.r_popf[(t, 0)] = self.r_popf[(t - 1, 0)] + drdt;
             println!(
                 "t={}: s={:.6} i={:.6} r={:.6}",
-                t, self.s_popf[(t, 0)], self.i_popf[(t, 0)], self.r_popf[(t, 0)]
+                t,
+                self.s_popf[(t, 0)],
+                self.i_popf[(t, 0)],
+                self.r_popf[(t, 0)]
             );
         }
         return self;
@@ -178,28 +180,35 @@ mod tests {
             model.s_popf[(0, 0)]
         );
         assert_eq!(
-            model.i_popf[(0, 0)], model.i_popf_init,
+            model.i_popf[(0, 0)],
+            model.i_popf_init,
             "Bad i_popf[0] initialization value, expected {} got {}.",
-            model.i_popf_init, model.i_popf[(0, 0)],
+            model.i_popf_init,
+            model.i_popf[(0, 0)],
         );
         assert_eq!(
-            model.r_popf[(0, 0)], model.r_popf_init,
+            model.r_popf[(0, 0)],
+            model.r_popf_init,
             "Bad r_popf[0] initialization value, expected {} got {}.",
-            model.r_popf_init, model.r_popf[(0, 0)],
+            model.r_popf_init,
+            model.r_popf[(0, 0)],
         );
         for t in 1..model.length {
             assert_eq!(
-                model.s_popf[(t, 0)], 0.0,
+                model.s_popf[(t, 0)],
+                0.0,
                 "Bad s_popf[t>0] initialization value, expected 0.0 got {}.",
                 model.s_popf[(t, 0)]
             );
             assert_eq!(
-                model.i_popf[(t, 0)], 0.0,
+                model.i_popf[(t, 0)],
+                0.0,
                 "Bad i_popf[t>0] initialization value, expected 0.0 got {}.",
                 model.i_popf[(t, 0)]
             );
             assert_eq!(
-                model.r_popf[(t, 0)], 0.0,
+                model.r_popf[(t, 0)],
+                0.0,
                 "Bad r_popf[t>0] initialization value, expected 0.0 got {}.",
                 model.r_popf[(t, 0)]
             );
@@ -207,7 +216,7 @@ mod tests {
     }
 
     #[test]
-    fn test_run_fdm_o1() {
+    fn test_run_euler() {
         let mut model: Model = Model {
             length: 10,
             i_popf_init: 0.01,
@@ -220,10 +229,11 @@ mod tests {
             r_popf: Mat::new(),
         };
         model.init_popf();
-        model.run_fdm_o1();
+        model.run_euler();
         for t in 1..model.length {
-            let dsdt = (-model.incidence_rate * model.s_popf[(t - 1, 0)] * model.i_popf[(t - 1, 0)])
-                + (model.recovery_rate * model.i_popf[(t - 1, 0)]);
+            let dsdt =
+                (-model.incidence_rate * model.s_popf[(t - 1, 0)] * model.i_popf[(t - 1, 0)])
+                    + (model.recovery_rate * model.i_popf[(t - 1, 0)]);
             let didt = (model.incidence_rate * model.s_popf[(t - 1, 0)] * model.i_popf[(t - 1, 0)])
                 - (model.removal_rate * model.i_popf[(t - 1, 0)])
                 - (model.recovery_rate * model.i_popf[(t - 1, 0)]);
