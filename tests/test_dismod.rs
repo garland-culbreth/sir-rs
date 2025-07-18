@@ -105,7 +105,7 @@ fn dismod_run_fdm_o1() {
         rc: Mat::new(),
     };
     model.init_popf();
-    model.run_fdm_o1();
+    model.run_euler();
     for t in 1..model.length {
         let dsdt =
             -((model.iota + model.omega) * model.s[(t - 1, 0)]) + (model.rho * model.c[(t - 1, 0)]);
