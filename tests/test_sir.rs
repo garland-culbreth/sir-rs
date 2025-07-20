@@ -86,7 +86,7 @@ fn sir_run_fdm_o1() {
         r_popf: Mat::new(),
     };
     model.init_popf();
-    model.run_fdm_o1();
+    model.run_euler();
     for t in 1..model.length {
         let dsdt = (-model.incidence_rate * model.s_popf[(t - 1, 0)] * model.i_popf[(t - 1, 0)])
             + (model.recovery_rate * model.i_popf[(t - 1, 0)]);

@@ -49,11 +49,10 @@ impl Model {
         return self;
     }
 
-    /// Run the DisMod differential equations by the first-order finite difference
-    /// method.
+    /// Run the DisMod differential equations by the first-order euler method.
     ///
     /// This solution method is very rough and only suitable for demonstration.
-    pub fn run_fdm_o1(&mut self) -> &Model {
+    pub fn run_euler(&mut self) -> &Model {
         for t in 1..self.length {
             let dsdt = -((self.iota + self.omega) * self.s[(t - 1, 0)]) + (self.rho * self.c[(t - 1, 0)]);
             let dcdt =
@@ -230,7 +229,7 @@ mod tests {
     }
 
     #[test]
-    fn test_run_fdm_o1() {
+    fn test_run_euler() {
         let mut model: Model = Model {
             length: 10,
             c_init: 0.01,
@@ -244,7 +243,7 @@ mod tests {
             rc: Mat::new(),
         };
         model.init_popf();
-        model.run_fdm_o1();
+        model.run_euler();
         for t in 1..model.length {
             let dsdt =
                 -((model.iota + model.omega) * model.s[(t - 1, 0)]) + (model.rho * model.c[(t - 1, 0)]);
