@@ -67,6 +67,57 @@ impl Model {
         }
         return self;
     }
+
+    fn ds(&self, susceptible: f64, infectious: f64) -> f64 {
+        return (-self.incidence_rate * susceptible * infectious)
+            + (self.recovery_rate * infectious);
+    }
+
+    fn di(&self, susceptible: f64, infectious: f64) -> f64 {
+        return (self.incidence_rate * susceptible * infectious)
+            - ((self.recovery_rate + self.removal_rate) * infectious);
+    }
+
+    fn dr(&self, infectious: f64) -> f64 {
+        return self.removal_rate * infectious;
+    }
+
+    fn rk4_step<F>(&self, f: F, x: f64, y: f64, step_size: f64) -> f64
+    where
+        F: Fn(f64, f64) -> f64,
+    {
+        let k1 = step_size * f(x, y);
+        let k2 = step_size * f(x + (step_size / 2.0), y + (k1 / 2.0));
+        let k3 = step_size * f(x + (step_size / 2.0), y + (k2 / 2.0));
+        let k4 = step_size * f(x + step_size, y + k3);
+        let df = (k1 + (2.0 * k2) + (2.0 * k3) + k4) / 6.0;
+        return df;
+    }
+
+    /// Solve the system by the 4th order Runge-Kutta method.
+    ///
+    /// This method is suitable for general purposes.
+    pub fn run_rk4(&mut self) -> &Model {
+        let step_size = 0.01;
+        for t in 0..self.length - 1 {
+            let s_t = self.s_popf[(t, 0)];
+            let i_t = self.i_popf[(t, 0)];
+            let dsdt = self.rk4_step(|x, y| self.ds(x, y), s_t, i_t, step_size);
+            let didt = self.rk4_step(|x, y| self.di(x, y), s_t, i_t, step_size);
+            let drdt = self.rk4_step(|_x, y| self.dr(y), s_t, i_t, step_size);
+            self.s_popf[(t + 1, 0)] = self.s_popf[(t, 0)] + dsdt;
+            self.i_popf[(t + 1, 0)] = self.i_popf[(t, 0)] + didt;
+            self.r_popf[(t + 1, 0)] = self.r_popf[(t, 0)] + drdt;
+            println!(
+                "t={}: s={:.6} i={:.6} r={:.6}",
+                t,
+                self.s_popf[(t, 0)],
+                self.i_popf[(t, 0)],
+                self.r_popf[(t, 0)]
+            );
+        }
+        return self;
+    }
 }
 
 #[cfg(test)]

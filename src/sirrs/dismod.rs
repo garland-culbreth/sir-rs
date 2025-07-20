@@ -70,6 +70,48 @@ impl Model {
         }
         return self;
     }
+    
+    fn ds(&self, susceptible: f64, condition: f64) -> f64 {
+        return -((self.iota + self.omega) * susceptible) + (self.rho * condition);
+    }
+
+    fn dc(&self, susceptible: f64, condition: f64) -> f64 {
+        return (self.iota * susceptible) - ((self.rho + self.chi + self.omega) * condition);
+    }
+
+    fn rk4_step<F>(&self, f: F, x: f64, y: f64, step_size: f64) -> f64
+    where
+        F: Fn(f64, f64) -> f64,
+    {
+        let k1 = step_size * f(x, y);
+        let k2 = step_size * f(x + (step_size / 2.0), y + (k1 / 2.0));
+        let k3 = step_size * f(x + (step_size / 2.0), y + (k2 / 2.0));
+        let k4 = step_size * f(x + step_size, y + k3);
+        let df = (k1 + (2.0 * k2) + (2.0 * k3) + k4) / 6.0;
+        return df;
+    }
+
+    /// Solve the system by the 4th order Runge-Kutta method.
+    ///
+    /// This method is suitable for general purposes.
+    pub fn run_rk4(&mut self) -> &Model {
+        let step_size = 0.01;
+        for t in 0..self.length - 1 {
+            let s_t = self.s[(t, 0)];
+            let c_t = self.c[(t, 0)];
+            let dsdt = self.rk4_step(|x, y| self.ds(x, y), s_t, c_t, step_size);
+            let dcdt = self.rk4_step(|x, y| self.dc(x, y), s_t, c_t, step_size);
+            self.s[(t + 1, 0)] = self.s[(t, 0)] + dsdt;
+            self.c[(t + 1, 0)] = self.c[(t, 0)] + dcdt;
+            println!(
+                "t={}: s={:.6} c={:.6}",
+                t,
+                self.s[(t, 0)],
+                self.c[(t, 0)],
+            );
+        }
+        return self;
+    }
 }
 
 #[cfg(test)]
