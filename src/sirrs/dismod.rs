@@ -158,25 +158,25 @@ mod tests {
         assert_eq!(
             model.s,
             Mat::new(),
-            "Bad s, expected DVector::default() got {:?}",
+            "Bad s, expected Mat::new() got {:?}",
             model.s,
         );
         assert_eq!(
             model.c,
             Mat::new(),
-            "Bad c, expected DVector::default() got {:?}",
+            "Bad c, expected Mat::new() got {:?}",
             model.c,
         );
         assert_eq!(
             model.rc,
             Mat::new(),
-            "Bad rc, expected DVector::default() got {:?}",
+            "Bad rc, expected Mat::new() got {:?}",
             model.rc,
         );
         assert_eq!(
             model.ro,
             Mat::new(),
-            "Bad ro, expected DVector::default() got {:?}",
+            "Bad ro, expected Mat::new() got {:?}",
             model.ro,
         );
     }

@@ -171,19 +171,19 @@ mod tests {
         assert_eq!(
             model.s_popf,
             Mat::new(),
-            "Bad , expected DVector::default() got {:?}",
+            "Bad , expected Mat::new() got {:?}",
             model.s_popf,
         );
         assert_eq!(
             model.i_popf,
             Mat::new(),
-            "Bad , expected DVector::default() got {:?}",
+            "Bad , expected Mat::new() got {:?}",
             model.i_popf,
         );
         assert_eq!(
             model.r_popf,
             Mat::new(),
-            "Bad , expected DVector::default() got {:?}",
+            "Bad , expected Mat::new() got {:?}",
             model.r_popf,
         );
     }
