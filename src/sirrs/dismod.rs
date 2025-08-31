@@ -75,6 +75,9 @@ impl Model {
         return self;
     }
 
+    /// Solve the system by the 4th order Runge-Kutta method.
+    ///
+    /// This method is suitable for general purposes.
     pub fn run_rk4(&mut self) -> &Model {
         let h = self.step_size;
         let n = (self.length.to_f64().unwrap() / h)
