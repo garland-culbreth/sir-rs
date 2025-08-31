@@ -75,7 +75,7 @@ impl Model {
         return self;
     }
 
-    /// Solve the system by the 4th order Runge-Kutta method.
+    /// Run the DisMod differential equations by the 4th order Runge-Kutta method.
     ///
     /// This method is suitable for general purposes.
     pub fn run_rk4(&mut self) -> &Model {
