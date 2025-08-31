@@ -5,6 +5,7 @@ use faer::Mat;
 fn sir_init_popf() {
     let mut model: Model = Model {
         length: 10,
+        step_size: 1.0,
         i_popf_init: 0.01,
         r_popf_init: 0.0,
         incidence_rate: 0.02,
@@ -76,6 +77,7 @@ fn sir_init_popf() {
 fn sir_run_fdm_o1() {
     let mut model: Model = Model {
         length: 10,
+        step_size: 1.0,
         i_popf_init: 0.01,
         r_popf_init: 0.0,
         incidence_rate: 0.02,

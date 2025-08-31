@@ -4,12 +4,14 @@
 //!  - S → I  
 //!  - I → R  
 //!  - R → S  
-use faer::Mat;
+use faer::{Mat, traits::num_traits::ToPrimitive};
 
 /// Create and run an SIR model.
 pub struct Model {
     /// Number of indices to generate and solve. The length of the series.
     pub length: usize,
+    /// Size of integration step.
+    pub step_size: f64,
     /// Initial infectious population fraction.
     pub i_popf_init: f64,
     /// Initial removed population fraction.
@@ -33,38 +35,16 @@ impl Model {
     /// to store the population fractions at each index and sets the 0th index
     /// of each equal to the corresponding initial population fraction.
     pub fn init_popf(&mut self) -> &mut Model {
-        self.s_popf = Mat::zeros(self.length, 1);
-        self.i_popf = Mat::zeros(self.length, 1);
-        self.r_popf = Mat::zeros(self.length, 1);
+        let n_steps = (self.length.to_f64().unwrap() / self.step_size)
+            .to_usize()
+            .unwrap();
+        self.s_popf = Mat::zeros(n_steps, 1);
+        self.i_popf = Mat::zeros(n_steps, 1);
+        self.r_popf = Mat::zeros(n_steps, 1);
         let s_init = 1.0 - self.i_popf_init - self.r_popf_init; // Population fractions must sum to 1.
         self.s_popf[(0, 0)] = s_init;
         self.i_popf[(0, 0)] = self.i_popf_init;
         self.r_popf[(0, 0)] = self.r_popf_init;
-        return self;
-    }
-
-    /// Run the SIR differential equations by the first-order euler method.
-    ///
-    /// This solution method is very rough and only suitable for demonstration.
-    pub fn run_euler(&mut self) -> &Model {
-        for t in 1..self.length {
-            let dsdt = (-self.incidence_rate * self.s_popf[(t - 1, 0)] * self.i_popf[(t - 1, 0)])
-                + (self.recovery_rate * self.i_popf[(t - 1, 0)]);
-            let didt = (self.incidence_rate * self.s_popf[(t - 1, 0)] * self.i_popf[(t - 1, 0)])
-                - (self.removal_rate * self.i_popf[(t - 1, 0)])
-                - (self.recovery_rate * self.i_popf[(t - 1, 0)]);
-            let drdt = self.removal_rate * self.i_popf[(t - 1, 0)];
-            self.s_popf[(t, 0)] = self.s_popf[(t - 1, 0)] + dsdt;
-            self.i_popf[(t, 0)] = self.i_popf[(t - 1, 0)] + didt;
-            self.r_popf[(t, 0)] = self.r_popf[(t - 1, 0)] + drdt;
-            println!(
-                "t={}: s={:.6} i={:.6} r={:.6}",
-                t,
-                self.s_popf[(t, 0)],
-                self.i_popf[(t, 0)],
-                self.r_popf[(t, 0)]
-            );
-        }
         return self;
     }
 
@@ -82,38 +62,80 @@ impl Model {
         return self.removal_rate * infectious;
     }
 
-    fn rk4_step<F>(&self, f: F, x: f64, y: f64, step_size: f64) -> f64
-    where
-        F: Fn(f64, f64) -> f64,
-    {
-        let k1 = step_size * f(x, y);
-        let k2 = step_size * f(x + (step_size / 2.0), y + (k1 / 2.0));
-        let k3 = step_size * f(x + (step_size / 2.0), y + (k2 / 2.0));
-        let k4 = step_size * f(x + step_size, y + k3);
-        let df = (k1 + (2.0 * k2) + (2.0 * k3) + k4) / 6.0;
-        return df;
+    /// Run the SIR differential equations by the first-order euler method.
+    ///
+    /// This solution method is very rough and only suitable for demonstration.
+    pub fn run_euler(&mut self) -> &Model {
+        let h = self.step_size;
+        let n = (self.length.to_f64().unwrap() / h)
+            .ceil()
+            .to_usize()
+            .unwrap();
+        for i in 0..n - 1 {
+            let dsdt = self.ds(self.s_popf[(i, 0)], self.i_popf[(i, 0)]);
+            let didt = self.di(self.s_popf[(i, 0)], self.i_popf[(i, 0)]);
+            let drdt = self.dr(self.i_popf[(i, 0)]);
+            self.s_popf[(i + 1, 0)] = self.s_popf[(i, 0)] + (h * dsdt);
+            self.i_popf[(i + 1, 0)] = self.i_popf[(i, 0)] + (h * didt);
+            self.r_popf[(i + 1, 0)] = self.r_popf[(i, 0)] + (h * drdt);
+            println!(
+                "t={}: s={:.6} i={:.6} r={:.6}",
+                i,
+                self.s_popf[(i, 0)],
+                self.i_popf[(i, 0)],
+                self.r_popf[(i, 0)]
+            );
+        }
+        return self;
     }
 
     /// Solve the system by the 4th order Runge-Kutta method.
     ///
     /// This method is suitable for general purposes.
     pub fn run_rk4(&mut self) -> &Model {
-        let step_size = 0.01;
-        for t in 0..self.length - 1 {
-            let s_t = self.s_popf[(t, 0)];
-            let i_t = self.i_popf[(t, 0)];
-            let dsdt = self.rk4_step(|x, y| self.ds(x, y), s_t, i_t, step_size);
-            let didt = self.rk4_step(|x, y| self.di(x, y), s_t, i_t, step_size);
-            let drdt = self.rk4_step(|_x, y| self.dr(y), s_t, i_t, step_size);
-            self.s_popf[(t + 1, 0)] = self.s_popf[(t, 0)] + dsdt;
-            self.i_popf[(t + 1, 0)] = self.i_popf[(t, 0)] + didt;
-            self.r_popf[(t + 1, 0)] = self.r_popf[(t, 0)] + drdt;
+        let h = self.step_size;
+        let n = (self.length.to_f64().unwrap() / h)
+            .ceil()
+            .to_usize()
+            .unwrap();
+        for i in 0..n - 1 {
+            //
+            let y0 = [
+                self.s_popf[(i, 0)],
+                self.i_popf[(i, 0)],
+                self.r_popf[(i, 0)],
+            ];
+            let k1 = [self.ds(y0[0], y0[1]), self.di(y0[0], y0[1]), self.dr(y0[1])];
+            let y1 = [
+                y0[0] + (k1[0] * (h / 2.0)),
+                y0[1] + (k1[1] * (h / 2.0)),
+                y0[2] + (k1[2] * (h / 2.0)),
+            ];
+            let k2 = [self.ds(y1[0], y1[1]), self.di(y1[0], y1[1]), self.dr(y1[1])];
+            let y2 = [
+                y0[0] + (k2[0] * (h / 2.0)),
+                y0[1] + (k2[1] * (h / 2.0)),
+                y0[2] + (k2[2] * (h / 2.0)),
+            ];
+            let k3 = [self.ds(y2[0], y2[1]), self.di(y2[0], y2[1]), self.dr(y2[1])];
+            let y3 = [
+                y0[0] + (k3[0] * h),
+                y0[1] + (k3[1] * h),
+                y0[2] + (k3[2] * h),
+            ];
+            let k4 = [self.ds(y3[0], y3[1]), self.di(y3[0], y3[1]), self.dr(y3[1])];
+            let dsdt = (k1[0] + (2.0 * k2[0]) + (2.0 * k3[0]) + k4[0]) / 6.0;
+            let didt = (k1[1] + (2.0 * k2[1]) + (2.0 * k3[1]) + k4[1]) / 6.0;
+            let drdt = (k1[2] + (2.0 * k2[2]) + (2.0 * k3[2]) + k4[2]) / 6.0;
+            self.s_popf[(i + 1, 0)] = self.s_popf[(i, 0)] + dsdt;
+            self.i_popf[(i + 1, 0)] = self.i_popf[(i, 0)] + didt;
+            self.r_popf[(i + 1, 0)] = self.r_popf[(i, 0)] + drdt;
             println!(
                 "t={}: s={:.6} i={:.6} r={:.6}",
-                t,
-                self.s_popf[(t, 0)],
-                self.i_popf[(t, 0)],
-                self.r_popf[(t, 0)]
+                i,
+                self.s_popf[(i, 0)],
+                self.i_popf[(i, 0)],
+                self.r_popf[(i, 0)],
             );
         }
         return self;
@@ -123,12 +145,13 @@ impl Model {
 #[cfg(test)]
 mod tests {
     use crate::sirrs::sir::Model;
-    use faer::Mat;
+    use faer::{Mat, traits::num_traits::ToPrimitive};
 
     #[test]
     fn test_init_model() {
         let model: Model = Model {
             length: 10,
+            step_size: 1.0,
             i_popf_init: 0.01,
             r_popf_init: 0.0,
             incidence_rate: 0.02,
@@ -192,6 +215,7 @@ mod tests {
     fn test_init_popf() {
         let mut model: Model = Model {
             length: 10,
+            step_size: 1.0,
             i_popf_init: 0.01,
             r_popf_init: 0.0,
             incidence_rate: 0.02,
@@ -270,6 +294,7 @@ mod tests {
     fn test_run_euler() {
         let mut model: Model = Model {
             length: 10,
+            step_size: 1.0,
             i_popf_init: 0.01,
             r_popf_init: 0.0,
             incidence_rate: 0.02,
@@ -281,14 +306,18 @@ mod tests {
         };
         model.init_popf();
         model.run_euler();
-        for t in 1..model.length {
-            let dsdt =
-                (-model.incidence_rate * model.s_popf[(t - 1, 0)] * model.i_popf[(t - 1, 0)])
-                    + (model.recovery_rate * model.i_popf[(t - 1, 0)]);
-            let didt = (model.incidence_rate * model.s_popf[(t - 1, 0)] * model.i_popf[(t - 1, 0)])
-                - (model.removal_rate * model.i_popf[(t - 1, 0)])
-                - (model.recovery_rate * model.i_popf[(t - 1, 0)]);
-            let drdt = model.removal_rate * model.i_popf[(t - 1, 0)];
+        let h = model.step_size;
+        let n = (model.length.to_f64().unwrap() / h)
+            .ceil()
+            .to_usize()
+            .unwrap();
+        for t in 1..n - 1 {
+            let dsdt = model.ds(model.s_popf[(t - 1, 0)], model.i_popf[(t - 1, 0)]);
+            let didt = model.di(model.s_popf[(t - 1, 0)], model.i_popf[(t - 1, 0)]);
+            let drdt = model.dr(model.i_popf[(t - 1, 0)]);
+            model.s_popf[(t, 0)] = model.s_popf[(t - 1, 0)] + (h * dsdt);
+            model.i_popf[(t, 0)] = model.i_popf[(t - 1, 0)] + (h * didt);
+            model.r_popf[(t, 0)] = model.r_popf[(t - 1, 0)] + (h * drdt);
             assert!(
                 (model.s_popf[(t, 0)] >= 0.0) & (model.s_popf[(t, 0)] <= 1.0),
                 "s_popf[(t, 0)] not in [0, 1] at time {}, got {}",
@@ -309,26 +338,26 @@ mod tests {
             );
             assert_eq!(
                 model.s_popf[(t, 0)],
-                model.s_popf[(t - 1, 0)] + dsdt,
+                model.s_popf[(t - 1, 0)] + (h * dsdt),
                 "Bad s_popf[(t, 0)] at time {}, expected {} got {}",
                 t,
-                model.s_popf[(t - 1, 0)] + dsdt,
+                model.s_popf[(t - 1, 0)] + (h * dsdt),
                 model.s_popf[(t, 0)]
             );
             assert_eq!(
                 model.i_popf[(t, 0)],
-                model.i_popf[(t - 1, 0)] + didt,
+                model.i_popf[(t - 1, 0)] + (h * didt),
                 "Bad i_popf[(t, 0)] at time {}, expected {} got {}",
                 t,
-                model.i_popf[(t - 1, 0)] + didt,
+                model.i_popf[(t - 1, 0)] + (h * didt),
                 model.i_popf[(t, 0)]
             );
             assert_eq!(
                 model.r_popf[(t, 0)],
-                model.r_popf[(t - 1, 0)] + drdt,
+                model.r_popf[(t - 1, 0)] + (h * drdt),
                 "Bad r_popf[(t, 0)] at time {}, expected {} got {}",
                 t,
-                model.r_popf[(t - 1, 0)] + drdt,
+                model.r_popf[(t - 1, 0)] + (h * drdt),
                 model.r_popf[(t, 0)]
             );
         }
