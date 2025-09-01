@@ -74,7 +74,7 @@ fn sir_init_popf() {
 }
 
 #[test]
-fn sir_run_fdm_o1() {
+fn sir_run_euler() {
     let mut model: Model = Model {
         length: 10,
         step_size: 1.0,

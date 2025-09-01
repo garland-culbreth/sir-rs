@@ -56,7 +56,7 @@ fn dismod_init_popf() {
 }
 
 #[test]
-fn dismod_run_fdm_o1() {
+fn dismod_run_euler() {
     let mut model: Model = Model {
         length: 10,
         step_size: 1.0,
