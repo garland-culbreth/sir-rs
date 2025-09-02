@@ -10,6 +10,15 @@
 //! See [DisMod's latest documentation](https://dismod-at.readthedocs.io/latest/diff_eq.html#diff-eq-title).
 use faer::{Mat, traits::num_traits::ToPrimitive};
 
+/// Numerical integrator variables
+///
+/// This private struct exists to make indexing k and y during integration
+/// simpler.
+struct SystemVars {
+    s: f64,
+    c: f64,
+}
+
 /// Create and run a DisMod-type model.
 pub struct Model {
     /// Number of indices to generate and solve. The length of the series.
@@ -48,11 +57,11 @@ impl Model {
         return self;
     }
 
-    fn ds(&self, s: f64, c: f64) -> f64 {
+    fn dsdt(&self, s: f64, c: f64) -> f64 {
         return -((self.iota + self.omega) * s) + (self.rho * c);
     }
 
-    fn dc(&self, s: f64, c: f64) -> f64 {
+    fn dcdt(&self, s: f64, c: f64) -> f64 {
         return (self.iota * s) - ((self.rho + self.chi + self.omega) * c);
     }
 
@@ -66,39 +75,97 @@ impl Model {
             .to_usize()
             .unwrap();
         for t in 1..n - 1 {
-            let dsdt = self.ds(self.s[(t, 0)], self.c[(t, 0)]);
-            let dcdt = self.dc(self.s[(t, 0)], self.c[(t, 0)]);
-            self.s[(t + 1, 0)] = self.s[(t, 0)] + (h * dsdt);
-            self.c[(t + 1, 0)] = self.c[(t, 0)] + (h * dcdt);
-            println!("t={}: s={:.6} c={:.6}", t, self.s[(t, 0)], self.c[(t, 0)],);
+            let ds = self.dsdt(self.s[(t, 0)], self.c[(t, 0)]);
+            let dc = self.dcdt(self.s[(t, 0)], self.c[(t, 0)]);
+            self.s[(t + 1, 0)] = self.s[(t, 0)] + (h * ds);
+            self.c[(t + 1, 0)] = self.c[(t, 0)] + (h * dc);
+            if t % 10 == 0 {
+                println!(
+                    "t={:.1} s={:.6} c={:.6}",
+                    t.to_f64().unwrap() * self.step_size,
+                    self.s[(t, 0)],
+                    self.c[(t, 0)],
+                );
+            }
         }
         return self;
+    }
+
+    /// Construct array of runge-kutta intermediate values for each variable.
+    fn init_y(&self) -> [SystemVars; 5] {
+        return [
+            SystemVars { s: 0.0, c: 0.0 },
+            SystemVars { s: 0.0, c: 0.0 },
+            SystemVars { s: 0.0, c: 0.0 },
+            SystemVars { s: 0.0, c: 0.0 },
+            SystemVars { s: 0.0, c: 0.0 },
+        ];
+    }
+
+    /// Construct array of runge-kutta constants for each function.
+    fn init_k(&self) -> [SystemVars; 5] {
+        return [
+            SystemVars { s: 0.0, c: 0.0 },
+            SystemVars { s: 0.0, c: 0.0 },
+            SystemVars { s: 0.0, c: 0.0 },
+            SystemVars { s: 0.0, c: 0.0 },
+            SystemVars { s: 0.0, c: 0.0 },
+        ];
+    }
+
+    /// Construct array of step sizes corresponding to each runge-kutta order.
+    fn init_h(&self) -> [f64; 4] {
+        return [
+            self.step_size / 2.0,
+            self.step_size / 2.0,
+            self.step_size,
+            self.step_size,
+        ];
+    }
+
+    /// Compute a runge-kutta approximate function value.
+    fn next_y(&self, y: f64, k: f64, h: f64) -> f64 {
+        return y + (k * h);
+    }
+
+    /// Compute a 4th order runge-kutta time step for the system.
+    fn rk4_step(&self, t: usize) -> [SystemVars; 5] {
+        let mut y = self.init_y();
+        let mut k = self.init_k();
+        let h = self.init_h();
+        y[0].s = self.s[(t, 0)];
+        y[0].c = self.c[(t, 0)];
+        for i in 0..4 {
+            k[i + 1].s = self.dsdt(y[i].s, y[i].c);
+            k[i + 1].c = self.dcdt(y[i].s, y[i].c);
+            y[i + 1].s = self.next_y(y[0].s, k[i + 1].s, h[i]);
+            y[i + 1].c = self.next_y(y[0].c, k[i + 1].c, h[i]);
+        }
+        return k;
     }
 
     /// Run the DisMod differential equations by the 4th order Runge-Kutta method.
     ///
     /// This method is suitable for general purposes.
     pub fn run_rk4(&mut self) -> &Model {
-        let h = self.step_size;
-        let n = (self.length.to_f64().unwrap() / h)
+        let n = (self.length.to_f64().unwrap() / self.step_size)
             .ceil()
             .to_usize()
             .unwrap();
-        for i in 0..n - 1 {
-            //
-            let y0 = [self.s[(i, 0)], self.c[(i, 0)]];
-            let k1 = [self.ds(y0[0], y0[1]), self.dc(y0[0], y0[1])];
-            let y1 = [y0[0] + (k1[0] * (h / 2.0)), y0[1] + (k1[1] * (h / 2.0))];
-            let k2 = [self.ds(y1[0], y1[1]), self.dc(y1[0], y1[1])];
-            let y2 = [y0[0] + (k2[0] * (h / 2.0)), y0[1] + (k2[1] * (h / 2.0))];
-            let k3 = [self.ds(y2[0], y2[1]), self.dc(y2[0], y2[1])];
-            let y3 = [y0[0] + (k3[0] * (h)), y0[1] + (k3[1] * h)];
-            let k4 = [self.ds(y3[0], y3[1]), self.dc(y3[0], y3[1])];
-            let dsdt = (k1[0] + (2.0 * k2[0]) + (2.0 * k3[0]) + k4[0]) / 6.0;
-            let dcdt = (k1[1] + (2.0 * k2[1]) + (2.0 * k3[1]) + k4[1]) / 6.0;
-            self.s[(i + 1, 0)] = self.s[(i, 0)] + dsdt;
-            self.c[(i + 1, 0)] = self.c[(i, 0)] + dcdt;
-            println!("t={}: s={:.6} c={:.6}", i, self.s[(i, 0)], self.c[(i, 0)],);
+        for t in 0..n - 1 {
+            let k = self.rk4_step(t);
+            let ds = (k[1].s + (2.0 * k[2].s) + (2.0 * k[3].s) + k[4].s) * (self.step_size / 6.0);
+            let dc = (k[1].c + (2.0 * k[2].c) + (2.0 * k[3].c) + k[4].c) * (self.step_size / 6.0);
+            self.s[(t + 1, 0)] = self.s[(t, 0)] + ds;
+            self.c[(t + 1, 0)] = self.c[(t, 0)] + dc;
+            if t % 10 == 0 {
+                println!(
+                    "t={:.1} s={:.6} c={:.6}",
+                    t.to_f64().unwrap() * self.step_size,
+                    self.s[(t, 0)],
+                    self.c[(t, 0)],
+                );
+            }
         }
         return self;
     }
@@ -107,7 +174,7 @@ impl Model {
 #[cfg(test)]
 mod tests {
     use crate::sirrs::dismod::Model;
-    use faer::Mat;
+    use faer::{Mat, traits::num_traits::ToPrimitive};
 
     #[test]
     fn test_init_model() {
@@ -265,6 +332,134 @@ mod tests {
                 t,
                 model.c[(t - 1, 0)] + dcdt,
                 model.c[(t, 0)]
+            );
+        }
+    }
+
+    #[test]
+    fn test_init_h() {
+        let model: Model = Model {
+            length: 10,
+            step_size: 1.0,
+            c_init: 0.01,
+            iota: 0.0,
+            rho: 0.02,
+            chi: 0.03,
+            omega: 0.04,
+            s: Mat::new(),
+            c: Mat::new(),
+        };
+        let h = model.init_h();
+        assert!(h.len() == 4, "Bad h initialization, expected 4 items, got {}", h.len());
+        assert!(h[0] == model.step_size / 2.0, "h[0] is not equal to model.step_size/2, got {}", h[0]);
+        assert!(h[1] == model.step_size / 2.0, "h[1] is not equal to model.step_size/2, got {}", h[1]);
+        assert!(h[2] == model.step_size, "h[2] is not equal to model.step_size, got {}", h[2]);
+        assert!(h[3] == model.step_size, "h[3] is not equal to model.step_size, got {}", h[3]);
+    }
+
+    #[test]
+    fn test_init_y() {
+        let model: Model = Model {
+            length: 10,
+            step_size: 1.0,
+            c_init: 0.01,
+            iota: 0.0,
+            rho: 0.02,
+            chi: 0.03,
+            omega: 0.04,
+            s: Mat::new(),
+            c: Mat::new(),
+        };
+        let y = model.init_y();
+        assert!(y.len() == 5, "Bad y initialization, expected 5 items, got {}", y.len());
+        for i in 0..5 {
+            assert!(y[i].s == 0.0, "y[{}].s is not equal to 0.0, got {}", i, y[i].s);
+            assert!(y[i].c == 0.0, "y[{}].c is not equal to 0.0, got {}", i, y[i].c);
+        }
+    }
+
+    #[test]
+    fn test_init_k() {
+        let model: Model = Model {
+            length: 10,
+            step_size: 1.0,
+            c_init: 0.01,
+            iota: 0.0,
+            rho: 0.02,
+            chi: 0.03,
+            omega: 0.04,
+            s: Mat::new(),
+            c: Mat::new(),
+        };
+        let k = model.init_k();
+        assert!(k.len() == 5, "Bad y initialization, expected 5 items, got {}", k.len());
+        for i in 0..5 {
+            assert!(k[i].s == 0.0, "k[{}].s is not equal to 0.0, got {}", i, k[i].s);
+            assert!(k[i].c == 0.0, "k[{}].c is not equal to 0.0, got {}", i, k[i].c);
+        }
+    }
+
+    #[test]
+    fn test_run_rk4() {
+        let mut model: Model = Model {
+            length: 10,
+            step_size: 1.0,
+            c_init: 0.01,
+            iota: 0.0,
+            rho: 0.02,
+            chi: 0.03,
+            omega: 0.04,
+            s: Mat::new(),
+            c: Mat::new(),
+        };
+        model.init_popf();
+        model.run_rk4();
+        let h = model.step_size;
+        let n = (model.length.to_f64().unwrap() / h)
+            .ceil()
+            .to_usize()
+            .unwrap();
+        for t in 0..n - 1 {
+            let mut y = model.init_y();
+            let mut k = model.init_k();
+            let h = model.init_h();
+            for i in 0..4 {
+                k[i + 1].s = model.dsdt(y[i].s, y[i].s);
+                k[i + 1].c = model.dcdt(y[i].s, y[i].c);
+                y[i + 1].s = model.next_y(y[0].s, k[i + 1].s, h[i]);
+                y[i + 1].c = model.next_y(y[0].c, k[i + 1].c, h[i]);
+            }
+            let ds = (k[1].s + (2.0 * k[2].s) + (2.0 * k[3].s) + k[4].s) * (model.step_size / 6.0);
+            let di = (k[1].c + (2.0 * k[2].c) + (2.0 * k[3].c) + k[4].c) * (model.step_size / 6.0);
+            model.s[(t + 1, 0)] = model.s[(t, 0)] + ds;
+            model.c[(t + 1, 0)] = model.c[(t, 0)] + di;
+            assert!(
+                (model.s[(t, 0)] >= 0.0) & (model.s[(t, 0)] <= 1.0),
+                "s_popf[(t, 0)] not in [0, 1] at time {}, got {}",
+                t,
+                model.s[(t, 0)]
+            );
+            assert!(
+                (model.c[(t, 0)] >= 0.0) & (model.c[(t, 0)] <= 1.0),
+                "i_popf[(t, 0)] not in [0, 1] at time {}, got {}",
+                t,
+                model.c[(t, 0)]
+            );
+            assert_eq!(
+                model.s[(t + 1, 0)],
+                model.s[(t, 0)] + ds,
+                "Bad s_popf[(t, 0)] at time {}, expected {} got {}",
+                t,
+                model.s[(t, 0)] + ds,
+                model.s[(t + 1, 0)]
+            );
+            assert_eq!(
+                model.c[(t + 1, 0)],
+                model.c[(t, 0)] + di,
+                "Bad i_popf[(t, 0)] at time {}, expected {} got {}",
+                t + 1,
+                model.c[(t, 0)] + di,
+                model.c[(t + 1, 0)]
             );
         }
     }
