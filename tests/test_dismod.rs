@@ -1,19 +1,17 @@
 use sirrs::dismod::Model;
-use faer::Mat;
 
 #[test]
 fn dismod_init_popf() {
-    let mut model: Model = Model {
-        length: 10,
-        step_size: 1.0,
-        c_init: 0.01,
-        iota: 0.0,
-        rho: 0.02,
-        chi: 0.03,
-        omega: 0.04,
-        s: Mat::new(),
-        c: Mat::new(),
-    };
+    let mut model = Model::new();
+    model.configure(
+        10,
+        1.0,
+        0.01,
+        0.01,
+        0.02,
+        0.03,
+        0.04,
+    );
     model.init_popf();
     assert_eq!(
         model.s.shape(),
@@ -57,17 +55,16 @@ fn dismod_init_popf() {
 
 #[test]
 fn dismod_run_euler() {
-    let mut model: Model = Model {
-        length: 10,
-        step_size: 1.0,
-        c_init: 0.01,
-        iota: 0.0,
-        rho: 0.02,
-        chi: 0.03,
-        omega: 0.04,
-        s: Mat::new(),
-        c: Mat::new(),
-    };
+    let mut model = Model::new();
+    model.configure(
+        10,
+        1.0,
+        0.01,
+        0.01,
+        0.02,
+        0.03,
+        0.04,
+    );
     model.init_popf();
     model.run_euler();
     for t in 1..model.length {

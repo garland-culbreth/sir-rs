@@ -1,20 +1,17 @@
 use sirrs::sir::Model;
-use faer::Mat;
 
 #[test]
 fn sir_init_popf() {
-    let mut model: Model = Model {
-        length: 10,
-        step_size: 1.0,
-        i_popf_init: 0.01,
-        r_popf_init: 0.0,
-        incidence_rate: 0.02,
-        removal_rate: 0.03,
-        recovery_rate: 0.04,
-        s_popf: Mat::new(),
-        i_popf: Mat::new(),
-        r_popf: Mat::new(),
-    };
+    let mut model = Model::new();
+    model.configure(
+        10,
+        1.0,
+        0.01,
+        0.0,
+        0.02,
+        0.03,
+        0.04,
+    );
     model.init_popf();
     assert_eq!(
         model.s_popf.shape(),
@@ -75,18 +72,16 @@ fn sir_init_popf() {
 
 #[test]
 fn sir_run_euler() {
-    let mut model: Model = Model {
-        length: 10,
-        step_size: 1.0,
-        i_popf_init: 0.01,
-        r_popf_init: 0.0,
-        incidence_rate: 0.02,
-        removal_rate: 0.03,
-        recovery_rate: 0.04,
-        s_popf: Mat::new(),
-        i_popf: Mat::new(),
-        r_popf: Mat::new(),
-    };
+    let mut model = Model::new();
+    model.configure(
+        10,
+        1.0,
+        0.01,
+        0.0,
+        0.02,
+        0.03,
+        0.04,
+    );
     model.init_popf();
     model.run_euler();
     for t in 1..model.length {
