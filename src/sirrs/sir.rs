@@ -42,7 +42,24 @@ pub struct Model {
 
 impl Model {
     /// Create a new model object.
-    pub fn new(
+    pub fn new() -> Self {
+        return Self {
+            length: 0,
+            step_size: 0.0,
+            i_popf_init: 0.0,
+            r_popf_init: 0.0,
+            incidence_rate: 0.0,
+            removal_rate: 0.0,
+            recovery_rate: 0.0,
+            s_popf: Mat::new(),
+            i_popf: Mat::new(),
+            r_popf: Mat::new(),
+        };
+    }
+
+    /// Configure model parameters.
+    pub fn configure(
+        &mut self,
         length: usize,
         step_size: f64,
         i_popf_init: f64,
@@ -50,34 +67,25 @@ impl Model {
         incidence_rate: f64,
         removal_rate: f64,
         recovery_rate: f64,
-        s_popf: Mat<f64>,
-        i_popf: Mat<f64>,
-        r_popf: Mat<f64>,
-    ) -> Self {
-        return Model {
-            length,
-            step_size,
-            i_popf_init,
-            r_popf_init,
-            incidence_rate,
-            removal_rate,
-            recovery_rate,
-            s_popf,
-            i_popf,
-            r_popf,
-        };
+    ) -> &mut Self {
+        let n_steps = (length.to_f64().unwrap() / step_size).to_usize().unwrap();
+        self.length = length;
+        self.step_size = step_size;
+        self.i_popf_init = i_popf_init;
+        self.r_popf_init = r_popf_init;
+        self.incidence_rate = incidence_rate;
+        self.removal_rate = removal_rate;
+        self.recovery_rate = recovery_rate;
+        self.s_popf = Mat::zeros(n_steps, 1);
+        self.i_popf = Mat::zeros(n_steps, 1);
+        self.r_popf = Mat::zeros(n_steps, 1);
+        return self;
     }
 
     /// Initialize population fractions. Creates arrays of length `self.length`
     /// to store the population fractions at each index and sets the 0th index
     /// of each equal to the corresponding initial population fraction.
     pub fn init_popf(&mut self) -> &mut Model {
-        let n_steps = (self.length.to_f64().unwrap() / self.step_size)
-            .to_usize()
-            .unwrap();
-        self.s_popf = Mat::zeros(n_steps, 1);
-        self.i_popf = Mat::zeros(n_steps, 1);
-        self.r_popf = Mat::zeros(n_steps, 1);
         let s_init = 1.0 - self.i_popf_init - self.r_popf_init; // Population fractions must sum to 1.
         self.s_popf[(0, 0)] = s_init;
         self.i_popf[(0, 0)] = self.i_popf_init;
@@ -258,19 +266,65 @@ mod tests {
     use faer::{Mat, traits::num_traits::ToPrimitive};
 
     #[test]
-    fn test_init_model() {
-        let model = Model::new(
-            10,
-            1.0,
-            0.01,
-            0.0,
-            0.02,
-            0.03,
-            0.04,
-            Mat::new(),
-            Mat::new(),
-            Mat::new(),
+    fn test_new() {
+        let model = Model::new();
+        assert_eq!(
+            model.length, 0,
+            "Bad length, expected 0 got {}",
+            model.length
         );
+        assert_eq!(
+            model.i_popf_init, 0.0,
+            "Bad i_popf_init, expected 0.0 got {}",
+            model.i_popf_init,
+        );
+        assert_eq!(
+            model.r_popf_init, 0.0,
+            "Bad r_popf_init, expected 0.0 got {}",
+            model.r_popf_init,
+        );
+        assert_eq!(
+            model.incidence_rate, 0.0,
+            "Bad incidence_rate, expected 0.0 got {}",
+            model.incidence_rate,
+        );
+        assert_eq!(
+            model.removal_rate, 0.0,
+            "Bad , expected 0.0 got {}",
+            model.removal_rate,
+        );
+        assert_eq!(
+            model.recovery_rate, 0.0,
+            "Bad , expected 0.0 got {}",
+            model.recovery_rate,
+        );
+        assert_eq!(
+            model.s_popf,
+            Mat::new(),
+            "Bad , expected Mat::new() got {:?}",
+            model.s_popf,
+        );
+        assert_eq!(
+            model.i_popf,
+            Mat::new(),
+            "Bad , expected Mat::new() got {:?}",
+            model.i_popf,
+        );
+        assert_eq!(
+            model.r_popf,
+            Mat::new(),
+            "Bad , expected Mat::new() got {:?}",
+            model.r_popf,
+        );
+    }
+
+    #[test]
+    fn test_configure() {
+        let mut model = Model::new();
+        model.configure(10, 1.0, 0.01, 0.0, 0.02, 0.03, 0.04);
+        let n_steps = (model.length.to_f64().unwrap() / model.step_size)
+            .to_usize()
+            .unwrap();
         assert_eq!(
             model.length, 10,
             "Bad length, expected 10 got {}",
@@ -303,38 +357,28 @@ mod tests {
         );
         assert_eq!(
             model.s_popf,
-            Mat::new(),
-            "Bad , expected Mat::new() got {:?}",
+            Mat::zeros(n_steps, 1),
+            "Bad , expected Mat::zeros(n_steps, 1) got {:?}",
             model.s_popf,
         );
         assert_eq!(
             model.i_popf,
-            Mat::new(),
-            "Bad , expected Mat::new() got {:?}",
+            Mat::zeros(n_steps, 1),
+            "Bad , expected Mat::zeros(n_steps, 1) got {:?}",
             model.i_popf,
         );
         assert_eq!(
             model.r_popf,
-            Mat::new(),
-            "Bad , expected Mat::new() got {:?}",
+            Mat::zeros(n_steps, 1),
+            "Bad , expected Mat::zeros(n_steps, 1) got {:?}",
             model.r_popf,
         );
     }
 
     #[test]
     fn test_init_popf() {
-        let mut model = Model::new(
-            10,
-            1.0,
-            0.01,
-            0.0,
-            0.02,
-            0.03,
-            0.04,
-            Mat::new(),
-            Mat::new(),
-            Mat::new(),
-        );
+        let mut model = Model::new();
+        model.configure(10, 1.0, 0.01, 0.0, 0.02, 0.03, 0.04);
         model.init_popf();
         assert_eq!(
             model.s_popf.shape(),
@@ -402,18 +446,8 @@ mod tests {
 
     #[test]
     fn test_run_euler() {
-        let mut model = Model::new(
-            10,
-            1.0,
-            0.01,
-            0.0,
-            0.02,
-            0.03,
-            0.04,
-            Mat::new(),
-            Mat::new(),
-            Mat::new(),
-        );
+        let mut model = Model::new();
+        model.configure(10, 1.0, 0.01, 0.0, 0.02, 0.03, 0.04);
         model.init_popf();
         model.run_euler();
         let h = model.step_size;
@@ -475,18 +509,8 @@ mod tests {
 
     #[test]
     fn test_init_h() {
-        let model = Model::new(
-            10,
-            1.0,
-            0.01,
-            0.0,
-            0.02,
-            0.03,
-            0.04,
-            Mat::new(),
-            Mat::new(),
-            Mat::new(),
-        );
+        let mut model = Model::new();
+        model.configure(10, 1.0, 0.01, 0.0, 0.02, 0.03, 0.04);
         let h = model.init_h();
         assert!(
             h.len() == 4,
@@ -517,18 +541,8 @@ mod tests {
 
     #[test]
     fn test_init_y() {
-        let model = Model::new(
-            10,
-            1.0,
-            0.01,
-            0.0,
-            0.02,
-            0.03,
-            0.04,
-            Mat::new(),
-            Mat::new(),
-            Mat::new(),
-        );
+        let mut model = Model::new();
+        model.configure(10, 1.0, 0.01, 0.0, 0.02, 0.03, 0.04);
         let y = model.init_y();
         assert!(
             y.len() == 5,
@@ -559,18 +573,8 @@ mod tests {
 
     #[test]
     fn test_init_k() {
-        let model = Model::new(
-            10,
-            1.0,
-            0.01,
-            0.0,
-            0.02,
-            0.03,
-            0.04,
-            Mat::new(),
-            Mat::new(),
-            Mat::new(),
-        );
+        let mut model = Model::new();
+        model.configure(10, 1.0, 0.01, 0.0, 0.02, 0.03, 0.04);
         let k = model.init_k();
         assert!(
             k.len() == 5,
@@ -601,18 +605,8 @@ mod tests {
 
     #[test]
     fn test_run_rk4() {
-        let mut model = Model::new(
-            10,
-            1.0,
-            0.01,
-            0.0,
-            0.02,
-            0.03,
-            0.04,
-            Mat::new(),
-            Mat::new(),
-            Mat::new(),
-        );
+        let mut model = Model::new();
+        model.configure(10, 1.0, 0.01, 0.0, 0.02, 0.03, 0.04);
         model.init_popf();
         model.run_rk4();
         let h = model.step_size;

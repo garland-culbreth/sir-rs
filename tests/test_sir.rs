@@ -1,20 +1,9 @@
 use sirrs::sir::Model;
-use faer::Mat;
 
 #[test]
 fn sir_init_popf() {
-    let mut model: Model = Model {
-        length: 10,
-        step_size: 1.0,
-        i_popf_init: 0.01,
-        r_popf_init: 0.0,
-        incidence_rate: 0.02,
-        removal_rate: 0.03,
-        recovery_rate: 0.04,
-        s_popf: Mat::new(),
-        i_popf: Mat::new(),
-        r_popf: Mat::new(),
-    };
+    let mut model = Model::new();
+    model.configure(10, 1.0, 0.01, 0.0, 0.02, 0.03, 0.04);
     model.init_popf();
     assert_eq!(
         model.s_popf.shape(),
@@ -45,28 +34,35 @@ fn sir_init_popf() {
         model.s_popf[(0, 0)]
     );
     assert_eq!(
-        model.i_popf[(0, 0)], model.i_popf_init,
+        model.i_popf[(0, 0)],
+        model.i_popf_init,
         "Bad i_popf[(0, 0)] initialization value, expected {} got {}.",
-        model.i_popf_init, model.i_popf[(0, 0)],
+        model.i_popf_init,
+        model.i_popf[(0, 0)],
     );
     assert_eq!(
-        model.r_popf[(0, 0)], model.r_popf_init,
+        model.r_popf[(0, 0)],
+        model.r_popf_init,
         "Bad r_popf[(0, 0)] initialization value, expected {} got {}.",
-        model.r_popf_init, model.r_popf[(0, 0)],
+        model.r_popf_init,
+        model.r_popf[(0, 0)],
     );
     for t in 1..model.length {
         assert_eq!(
-            model.s_popf[(t, 0)], 0.0,
+            model.s_popf[(t, 0)],
+            0.0,
             "Bad s_popf[t>0] initialization value, expected 0.0 got {}.",
             model.s_popf[(t, 0)]
         );
         assert_eq!(
-            model.i_popf[(t, 0)], 0.0,
+            model.i_popf[(t, 0)],
+            0.0,
             "Bad i_popf[t>0] initialization value, expected 0.0 got {}.",
             model.i_popf[(t, 0)]
         );
         assert_eq!(
-            model.r_popf[(t, 0)], 0.0,
+            model.r_popf[(t, 0)],
+            0.0,
             "Bad r_popf[t>0] initialization value, expected 0.0 got {}.",
             model.r_popf[(t, 0)]
         );
@@ -75,18 +71,8 @@ fn sir_init_popf() {
 
 #[test]
 fn sir_run_euler() {
-    let mut model: Model = Model {
-        length: 10,
-        step_size: 1.0,
-        i_popf_init: 0.01,
-        r_popf_init: 0.0,
-        incidence_rate: 0.02,
-        removal_rate: 0.03,
-        recovery_rate: 0.04,
-        s_popf: Mat::new(),
-        i_popf: Mat::new(),
-        r_popf: Mat::new(),
-    };
+    let mut model = Model::new();
+    model.configure(10, 1.0, 0.01, 0.0, 0.02, 0.03, 0.04);
     model.init_popf();
     model.run_euler();
     for t in 1..model.length {
