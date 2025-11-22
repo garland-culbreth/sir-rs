@@ -42,6 +42,31 @@ pub struct Model {
 }
 
 impl Model {
+    /// Create a new model object.
+    pub fn new(
+        length: usize,
+        step_size: f64,
+        c_init: f64,
+        iota: f64,
+        rho: f64,
+        chi: f64,
+        omega: f64,
+        s: Mat<f64>,
+        c: Mat<f64>,
+    ) -> Self{
+        return Model {
+            length,
+            step_size,
+            c_init,
+            iota,
+            rho,
+            chi,
+            omega,
+            s,
+            c,
+        };
+    }
+
     /// Initialize population fractions. Creates arrays of length `self.length`
     /// to store the population fractions at each index and sets the 0th index
     /// of each equal to the corresponding initial population fraction.
@@ -178,17 +203,17 @@ mod tests {
 
     #[test]
     fn test_init_model() {
-        let model: Model = Model {
-            length: 10,
-            step_size: 1.0,
-            c_init: 0.01,
-            iota: 0.01,
-            rho: 0.02,
-            chi: 0.03,
-            omega: 0.04,
-            s: Mat::new(),
-            c: Mat::new(),
-        };
+        let model = Model::new(
+            10,
+            1.0,
+            0.01,
+            0.01,
+            0.02,
+            0.03,
+            0.04,
+            Mat::new(),
+            Mat::new(),
+        );
         assert_eq!(
             model.length, 10,
             "Bad length, expected 10 got {}",
@@ -227,17 +252,17 @@ mod tests {
 
     #[test]
     fn test_init_popf() {
-        let mut model: Model = Model {
-            length: 10,
-            step_size: 1.0,
-            c_init: 0.01,
-            iota: 0.0,
-            rho: 0.02,
-            chi: 0.03,
-            omega: 0.04,
-            s: Mat::new(),
-            c: Mat::new(),
-        };
+        let mut model = Model::new(
+            10,
+            1.0,
+            0.01,
+            0.01,
+            0.02,
+            0.03,
+            0.04,
+            Mat::new(),
+            Mat::new(),
+        );
         model.init_popf();
         assert_eq!(
             model.s.shape(),
@@ -285,17 +310,17 @@ mod tests {
 
     #[test]
     fn test_run_euler() {
-        let mut model: Model = Model {
-            length: 10,
-            step_size: 1.0,
-            c_init: 0.01,
-            iota: 0.0,
-            rho: 0.02,
-            chi: 0.03,
-            omega: 0.04,
-            s: Mat::new(),
-            c: Mat::new(),
-        };
+        let mut model = Model::new(
+            10,
+            1.0,
+            0.01,
+            0.01,
+            0.02,
+            0.03,
+            0.04,
+            Mat::new(),
+            Mat::new(),
+        );
         model.init_popf();
         model.run_euler();
         for t in 1..model.length {
@@ -338,17 +363,17 @@ mod tests {
 
     #[test]
     fn test_init_h() {
-        let model: Model = Model {
-            length: 10,
-            step_size: 1.0,
-            c_init: 0.01,
-            iota: 0.0,
-            rho: 0.02,
-            chi: 0.03,
-            omega: 0.04,
-            s: Mat::new(),
-            c: Mat::new(),
-        };
+        let model = Model::new(
+            10,
+            1.0,
+            0.01,
+            0.01,
+            0.02,
+            0.03,
+            0.04,
+            Mat::new(),
+            Mat::new(),
+        );
         let h = model.init_h();
         assert!(h.len() == 4, "Bad h initialization, expected 4 items, got {}", h.len());
         assert!(h[0] == model.step_size / 2.0, "h[0] is not equal to model.step_size/2, got {}", h[0]);
@@ -359,17 +384,17 @@ mod tests {
 
     #[test]
     fn test_init_y() {
-        let model: Model = Model {
-            length: 10,
-            step_size: 1.0,
-            c_init: 0.01,
-            iota: 0.0,
-            rho: 0.02,
-            chi: 0.03,
-            omega: 0.04,
-            s: Mat::new(),
-            c: Mat::new(),
-        };
+        let model = Model::new(
+            10,
+            1.0,
+            0.01,
+            0.01,
+            0.02,
+            0.03,
+            0.04,
+            Mat::new(),
+            Mat::new(),
+        );
         let y = model.init_y();
         assert!(y.len() == 5, "Bad y initialization, expected 5 items, got {}", y.len());
         for i in 0..5 {
@@ -380,17 +405,17 @@ mod tests {
 
     #[test]
     fn test_init_k() {
-        let model: Model = Model {
-            length: 10,
-            step_size: 1.0,
-            c_init: 0.01,
-            iota: 0.0,
-            rho: 0.02,
-            chi: 0.03,
-            omega: 0.04,
-            s: Mat::new(),
-            c: Mat::new(),
-        };
+        let model = Model::new(
+            10,
+            1.0,
+            0.01,
+            0.01,
+            0.02,
+            0.03,
+            0.04,
+            Mat::new(),
+            Mat::new(),
+        );
         let k = model.init_k();
         assert!(k.len() == 5, "Bad y initialization, expected 5 items, got {}", k.len());
         for i in 0..5 {
@@ -401,17 +426,17 @@ mod tests {
 
     #[test]
     fn test_run_rk4() {
-        let mut model: Model = Model {
-            length: 10,
-            step_size: 1.0,
-            c_init: 0.01,
-            iota: 0.0,
-            rho: 0.02,
-            chi: 0.03,
-            omega: 0.04,
-            s: Mat::new(),
-            c: Mat::new(),
-        };
+        let mut model = Model::new(
+            10,
+            1.0,
+            0.01,
+            0.01,
+            0.02,
+            0.03,
+            0.04,
+            Mat::new(),
+            Mat::new(),
+        );
         model.init_popf();
         model.run_rk4();
         let h = model.step_size;
