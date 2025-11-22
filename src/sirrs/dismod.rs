@@ -68,9 +68,7 @@ impl Model {
         chi: f64,
         omega: f64,
     ) -> &mut Self {
-        let n_steps = (length.to_f64().unwrap() / step_size)
-            .to_usize()
-            .unwrap();
+        let n_steps = (length.to_f64().unwrap() / step_size).to_usize().unwrap();
         self.length = length;
         self.step_size = step_size;
         self.c_init = c_init;
@@ -215,7 +213,7 @@ mod tests {
     #[test]
     fn test_new() {
         let model = Model::new();
-         assert_eq!(
+        assert_eq!(
             model.length, 0,
             "Bad length, expected 0 got {}",
             model.length
@@ -225,11 +223,7 @@ mod tests {
             "Bad c_init, expected 0.0 got {}",
             model.c_init,
         );
-        assert_eq!(
-            model.iota, 0.0,
-            "Bad iota, expected 0.0 got {}",
-            model.iota,
-        );
+        assert_eq!(model.iota, 0.0, "Bad iota, expected 0.0 got {}", model.iota,);
         assert_eq!(model.rho, 0.0, "Bad rho, expected 0.0 got {}", model.rho);
         assert_eq!(model.chi, 0.0, "Bad chi, expected 0.0 got {}", model.chi);
         assert_eq!(
@@ -254,15 +248,7 @@ mod tests {
     #[test]
     fn test_configure() {
         let mut model = Model::new();
-        model.configure(
-            10,
-            1.0,
-            0.01,
-            0.01,
-            0.02,
-            0.03,
-            0.04,
-        );
+        model.configure(10, 1.0, 0.01, 0.01, 0.02, 0.03, 0.04);
         let n_steps = (model.length.to_f64().unwrap() / model.step_size)
             .to_usize()
             .unwrap();
@@ -305,15 +291,7 @@ mod tests {
     #[test]
     fn test_init_popf() {
         let mut model = Model::new();
-        model.configure(
-            10,
-            1.0,
-            0.01,
-            0.01,
-            0.02,
-            0.03,
-            0.04,
-        );
+        model.configure(10, 1.0, 0.01, 0.01, 0.02, 0.03, 0.04);
         model.init_popf();
         assert_eq!(
             model.s.shape(),
@@ -362,15 +340,7 @@ mod tests {
     #[test]
     fn test_run_euler() {
         let mut model = Model::new();
-        model.configure(
-            10,
-            1.0,
-            0.01,
-            0.01,
-            0.02,
-            0.03,
-            0.04,
-        );
+        model.configure(10, 1.0, 0.01, 0.01, 0.02, 0.03, 0.04);
         model.init_popf();
         model.run_euler();
         for t in 1..model.length {
@@ -414,75 +384,91 @@ mod tests {
     #[test]
     fn test_init_h() {
         let mut model = Model::new();
-        model.configure(
-            10,
-            1.0,
-            0.01,
-            0.01,
-            0.02,
-            0.03,
-            0.04,
-        );
+        model.configure(10, 1.0, 0.01, 0.01, 0.02, 0.03, 0.04);
         let h = model.init_h();
-        assert!(h.len() == 4, "Bad h initialization, expected 4 items, got {}", h.len());
-        assert!(h[0] == model.step_size / 2.0, "h[0] is not equal to model.step_size/2, got {}", h[0]);
-        assert!(h[1] == model.step_size / 2.0, "h[1] is not equal to model.step_size/2, got {}", h[1]);
-        assert!(h[2] == model.step_size, "h[2] is not equal to model.step_size, got {}", h[2]);
-        assert!(h[3] == model.step_size, "h[3] is not equal to model.step_size, got {}", h[3]);
+        assert!(
+            h.len() == 4,
+            "Bad h initialization, expected 4 items, got {}",
+            h.len()
+        );
+        assert!(
+            h[0] == model.step_size / 2.0,
+            "h[0] is not equal to model.step_size/2, got {}",
+            h[0]
+        );
+        assert!(
+            h[1] == model.step_size / 2.0,
+            "h[1] is not equal to model.step_size/2, got {}",
+            h[1]
+        );
+        assert!(
+            h[2] == model.step_size,
+            "h[2] is not equal to model.step_size, got {}",
+            h[2]
+        );
+        assert!(
+            h[3] == model.step_size,
+            "h[3] is not equal to model.step_size, got {}",
+            h[3]
+        );
     }
 
     #[test]
     fn test_init_y() {
         let mut model = Model::new();
-        model.configure(
-            10,
-            1.0,
-            0.01,
-            0.01,
-            0.02,
-            0.03,
-            0.04,
-        );
+        model.configure(10, 1.0, 0.01, 0.01, 0.02, 0.03, 0.04);
         let y = model.init_y();
-        assert!(y.len() == 5, "Bad y initialization, expected 5 items, got {}", y.len());
+        assert!(
+            y.len() == 5,
+            "Bad y initialization, expected 5 items, got {}",
+            y.len()
+        );
         for i in 0..5 {
-            assert!(y[i].s == 0.0, "y[{}].s is not equal to 0.0, got {}", i, y[i].s);
-            assert!(y[i].c == 0.0, "y[{}].c is not equal to 0.0, got {}", i, y[i].c);
+            assert!(
+                y[i].s == 0.0,
+                "y[{}].s is not equal to 0.0, got {}",
+                i,
+                y[i].s
+            );
+            assert!(
+                y[i].c == 0.0,
+                "y[{}].c is not equal to 0.0, got {}",
+                i,
+                y[i].c
+            );
         }
     }
 
     #[test]
     fn test_init_k() {
         let mut model = Model::new();
-        model.configure(
-            10,
-            1.0,
-            0.01,
-            0.01,
-            0.02,
-            0.03,
-            0.04,
-        );
+        model.configure(10, 1.0, 0.01, 0.01, 0.02, 0.03, 0.04);
         let k = model.init_k();
-        assert!(k.len() == 5, "Bad y initialization, expected 5 items, got {}", k.len());
+        assert!(
+            k.len() == 5,
+            "Bad y initialization, expected 5 items, got {}",
+            k.len()
+        );
         for i in 0..5 {
-            assert!(k[i].s == 0.0, "k[{}].s is not equal to 0.0, got {}", i, k[i].s);
-            assert!(k[i].c == 0.0, "k[{}].c is not equal to 0.0, got {}", i, k[i].c);
+            assert!(
+                k[i].s == 0.0,
+                "k[{}].s is not equal to 0.0, got {}",
+                i,
+                k[i].s
+            );
+            assert!(
+                k[i].c == 0.0,
+                "k[{}].c is not equal to 0.0, got {}",
+                i,
+                k[i].c
+            );
         }
     }
 
     #[test]
     fn test_run_rk4() {
         let mut model = Model::new();
-        model.configure(
-            10,
-            1.0,
-            0.01,
-            0.01,
-            0.02,
-            0.03,
-            0.04,
-        );
+        model.configure(10, 1.0, 0.01, 0.01, 0.02, 0.03, 0.04);
         model.init_popf();
         model.run_rk4();
         let h = model.step_size;

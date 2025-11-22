@@ -68,9 +68,7 @@ impl Model {
         removal_rate: f64,
         recovery_rate: f64,
     ) -> &mut Self {
-        let n_steps = (length.to_f64().unwrap() / step_size)
-            .to_usize()
-            .unwrap();
+        let n_steps = (length.to_f64().unwrap() / step_size).to_usize().unwrap();
         self.length = length;
         self.step_size = step_size;
         self.i_popf_init = i_popf_init;
@@ -323,15 +321,7 @@ mod tests {
     #[test]
     fn test_configure() {
         let mut model = Model::new();
-        model.configure(
-            10,
-            1.0,
-            0.01,
-            0.0,
-            0.02,
-            0.03,
-            0.04,
-        );
+        model.configure(10, 1.0, 0.01, 0.0, 0.02, 0.03, 0.04);
         let n_steps = (model.length.to_f64().unwrap() / model.step_size)
             .to_usize()
             .unwrap();
@@ -388,15 +378,7 @@ mod tests {
     #[test]
     fn test_init_popf() {
         let mut model = Model::new();
-        model.configure(
-            10,
-            1.0,
-            0.01,
-            0.0,
-            0.02,
-            0.03,
-            0.04,
-        );
+        model.configure(10, 1.0, 0.01, 0.0, 0.02, 0.03, 0.04);
         model.init_popf();
         assert_eq!(
             model.s_popf.shape(),
@@ -465,15 +447,7 @@ mod tests {
     #[test]
     fn test_run_euler() {
         let mut model = Model::new();
-        model.configure(
-            10,
-            1.0,
-            0.01,
-            0.0,
-            0.02,
-            0.03,
-            0.04,
-        );
+        model.configure(10, 1.0, 0.01, 0.0, 0.02, 0.03, 0.04);
         model.init_popf();
         model.run_euler();
         let h = model.step_size;
@@ -536,15 +510,7 @@ mod tests {
     #[test]
     fn test_init_h() {
         let mut model = Model::new();
-        model.configure(
-            10,
-            1.0,
-            0.01,
-            0.0,
-            0.02,
-            0.03,
-            0.04,
-        );
+        model.configure(10, 1.0, 0.01, 0.0, 0.02, 0.03, 0.04);
         let h = model.init_h();
         assert!(
             h.len() == 4,
@@ -576,15 +542,7 @@ mod tests {
     #[test]
     fn test_init_y() {
         let mut model = Model::new();
-        model.configure(
-            10,
-            1.0,
-            0.01,
-            0.0,
-            0.02,
-            0.03,
-            0.04,
-        );
+        model.configure(10, 1.0, 0.01, 0.0, 0.02, 0.03, 0.04);
         let y = model.init_y();
         assert!(
             y.len() == 5,
@@ -616,15 +574,7 @@ mod tests {
     #[test]
     fn test_init_k() {
         let mut model = Model::new();
-        model.configure(
-            10,
-            1.0,
-            0.01,
-            0.0,
-            0.02,
-            0.03,
-            0.04,
-        );
+        model.configure(10, 1.0, 0.01, 0.0, 0.02, 0.03, 0.04);
         let k = model.init_k();
         assert!(
             k.len() == 5,
@@ -656,15 +606,7 @@ mod tests {
     #[test]
     fn test_run_rk4() {
         let mut model = Model::new();
-        model.configure(
-            10,
-            1.0,
-            0.01,
-            0.0,
-            0.02,
-            0.03,
-            0.04,
-        );
+        model.configure(10, 1.0, 0.01, 0.0, 0.02, 0.03, 0.04);
         model.init_popf();
         model.run_rk4();
         let h = model.step_size;

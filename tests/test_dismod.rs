@@ -3,15 +3,7 @@ use sirrs::dismod::Model;
 #[test]
 fn dismod_init_popf() {
     let mut model = Model::new();
-    model.configure(
-        10,
-        1.0,
-        0.01,
-        0.01,
-        0.02,
-        0.03,
-        0.04,
-    );
+    model.configure(10, 1.0, 0.01, 0.01, 0.02, 0.03, 0.04);
     model.init_popf();
     assert_eq!(
         model.s.shape(),
@@ -35,18 +27,22 @@ fn dismod_init_popf() {
         model.s[(0, 0)],
     );
     assert_eq!(
-        model.c[(0, 0)], model.c_init,
+        model.c[(0, 0)],
+        model.c_init,
         "Bad c[(0, 0)] initialization value, expected {} got {}.",
-        model.c_init, model.c[(0, 0)],
+        model.c_init,
+        model.c[(0, 0)],
     );
     for t in 1..model.length {
         assert_eq!(
-            model.s[(t, 0)], 0.0,
+            model.s[(t, 0)],
+            0.0,
             "Bad s[t>0] initialization value, expected 0.0 got {}.",
             model.s[(t, 0)]
         );
         assert_eq!(
-            model.c[(t, 0)], 0.0,
+            model.c[(t, 0)],
+            0.0,
             "Bad c[t>0] initialization value, expected 0.0 got {}.",
             model.c[(t, 0)]
         );
@@ -56,15 +52,7 @@ fn dismod_init_popf() {
 #[test]
 fn dismod_run_euler() {
     let mut model = Model::new();
-    model.configure(
-        10,
-        1.0,
-        0.01,
-        0.01,
-        0.02,
-        0.03,
-        0.04,
-    );
+    model.configure(10, 1.0, 0.01, 0.01, 0.02, 0.03, 0.04);
     model.init_popf();
     model.run_euler();
     for t in 1..model.length {
