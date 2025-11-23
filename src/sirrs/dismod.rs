@@ -8,7 +8,7 @@
 //!  - C → Ro
 //!
 //! See [DisMod's latest documentation](https://dismod-at.readthedocs.io/latest/diff_eq.html#diff-eq-title).
-use faer::{Mat, traits::num_traits::ToPrimitive};
+use faer::Mat;
 
 /// Numerical integrator variables
 ///
@@ -68,7 +68,7 @@ impl Model {
         chi: f64,
         omega: f64,
     ) -> &mut Self {
-        let n_steps = (length.to_f64().unwrap() / step_size).to_usize().unwrap();
+        let n_steps = ((length as f64) / step_size).ceil() as usize;
         self.length = length;
         self.step_size = step_size;
         self.c_init = c_init;
@@ -104,10 +104,7 @@ impl Model {
     /// This solution method is very rough and only suitable for demonstration.
     pub fn run_euler(&mut self) -> &Model {
         let h = self.step_size;
-        let n = (self.length.to_f64().unwrap() / h)
-            .ceil()
-            .to_usize()
-            .unwrap();
+        let n = ((self.length as f64) / h).ceil() as usize;
         for t in 1..n - 1 {
             let ds = self.dsdt(self.s[(t, 0)], self.c[(t, 0)]);
             let dc = self.dcdt(self.s[(t, 0)], self.c[(t, 0)]);
@@ -116,7 +113,7 @@ impl Model {
             if t % 10 == 0 {
                 println!(
                     "t={:.1} s={:.6} c={:.6}",
-                    t.to_f64().unwrap() * self.step_size,
+                    (t as f64) * self.step_size,
                     self.s[(t, 0)],
                     self.c[(t, 0)],
                 );
@@ -182,10 +179,7 @@ impl Model {
     ///
     /// This method is suitable for general purposes.
     pub fn run_rk4(&mut self) -> &Model {
-        let n = (self.length.to_f64().unwrap() / self.step_size)
-            .ceil()
-            .to_usize()
-            .unwrap();
+        let n = ((self.length as f64) / self.step_size).ceil() as usize;
         for t in 0..n - 1 {
             let k = self.rk4_step(t);
             let ds = (k[1].s + (2.0 * k[2].s) + (2.0 * k[3].s) + k[4].s) * (self.step_size / 6.0);
@@ -195,7 +189,7 @@ impl Model {
             if t % 10 == 0 {
                 println!(
                     "t={:.1} s={:.6} c={:.6}",
-                    t.to_f64().unwrap() * self.step_size,
+                    (t as f64) * self.step_size,
                     self.s[(t, 0)],
                     self.c[(t, 0)],
                 );
@@ -208,7 +202,7 @@ impl Model {
 #[cfg(test)]
 mod tests {
     use crate::sirrs::dismod::Model;
-    use faer::{Mat, traits::num_traits::ToPrimitive};
+    use faer::Mat;
 
     #[test]
     fn test_new() {
@@ -249,9 +243,7 @@ mod tests {
     fn test_configure() {
         let mut model = Model::new();
         model.configure(10, 1.0, 0.01, 0.01, 0.02, 0.03, 0.04);
-        let n_steps = (model.length.to_f64().unwrap() / model.step_size)
-            .to_usize()
-            .unwrap();
+        let n_steps = ((model.length as f64) / model.step_size).ceil() as usize;
         assert_eq!(
             model.length, 10,
             "Bad length, expected 10 got {}",
@@ -472,10 +464,7 @@ mod tests {
         model.init_popf();
         model.run_rk4();
         let h = model.step_size;
-        let n = (model.length.to_f64().unwrap() / h)
-            .ceil()
-            .to_usize()
-            .unwrap();
+        let n = ((model.length as f64) / h).ceil() as usize;
         for t in 0..n - 1 {
             let mut y = model.init_y();
             let mut k = model.init_k();
